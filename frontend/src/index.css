@@ -1,0 +1,73 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Quicksand:wght@600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap');
+
+@import "tailwindcss";
+
+@theme {
+  /* ================= COLORES ================= */
+  --color-surface: #f3faff;
+  --color-surface-dim: #c7dde9;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-container-low: #e6f6ff;
+  --color-surface-container: #dbf1fe;
+  --color-surface-container-high: #d5ecf8;
+  --color-surface-container-highest: #cfe6f2;
+  
+  --color-on-surface: #071e27;
+  --color-on-surface-variant: #3d4947;
+  
+  --color-primary: #00685e;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #008377;
+  --color-on-primary-container: #f4fffb;
+  
+  --color-secondary: #8b5000;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #ff9800;
+  --color-on-secondary-container: #653900;
+  
+  --color-tertiary: #005ea4;
+  --color-on-tertiary: #ffffff;
+  --color-tertiary-container: #0077ce;
+  
+  --color-error: #ba1a1a;
+  --color-error-container: #ffdad6;
+  
+  --color-outline: #6d7a77;
+  --color-outline-variant: #bcc9c6;
+
+  /* ================= TIPOGRAFÍA ================= */
+  --font-display: 'Quicksand', sans-serif;
+  --font-body: 'Inter', sans-serif;
+
+  /* ================= ESPACIADOS ================= */
+  --spacing-base: 8px;
+  --spacing-xs: 4px;
+  --spacing-sm: 12px;
+  --spacing-md: 24px;
+  --spacing-lg: 48px;
+  --spacing-xl: 80px;
+  --spacing-gutter: 24px;
+  --spacing-margin-mobile: 16px;
+  --spacing-margin-desktop: 64px;
+
+  /* ================= BORDES Y SOMBRAS ================= */
+  --radius-card: 1.5rem; /* Para los modales y tarjetas grandes */
+  --shadow-ambient: 0 10px 40px -10px rgba(0, 104, 94, 0.1), 0 4px 6px -4px rgba(0, 104, 94, 0.05);
+  --shadow-glow: 0 0 0 4px rgba(0, 150, 136, 0.15);
+}
+
+/* Clases base globales */
+@layer base {
+  body {
+    @apply bg-surface text-on-surface font-body antialiased;
+  }
+  
+  /* Configuración global para los íconos de Material Symbols */
+  .material-symbols-outlined {
+    font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+  }
+  .icon-fill {
+    font-variation-settings: 'FILL' 1;
+  }
+}
