@@ -34,7 +34,6 @@ export default function Staff() {
   const [formData, setFormData] = useState(initialFormState);
 
   // ================= LÓGICA DE FILTRADO REAL =================
-  // Filtramos el array mockStaff en tiempo real basado en la búsqueda y el select
   const filteredStaff = mockStaff.filter((staff) => {
     const fullName = `${staff.nombres} ${staff.apPat} ${staff.apMat}`.toLowerCase();
     const matchesSearch = fullName.includes(searchTerm.toLowerCase()) || staff.correo.toLowerCase().includes(searchTerm.toLowerCase());
@@ -72,7 +71,9 @@ export default function Staff() {
 
   const confirmDelete = () => {
     console.log("Eliminando registro ID:", selectedStaffId);
+    // Aquí irá tu llamada axios.delete(`/api/empleados/${selectedStaffId}`)
     setIsDeleteModalOpen(false);
+    setSelectedStaffId(null);
   };
 
   return (
@@ -93,10 +94,9 @@ export default function Staff() {
       {/* Tarjeta de Gestión (Filtros + Tabla) */}
       <div className="bg-white rounded-[1.5rem] shadow-ambient border border-outline-variant/30 flex flex-col flex-1 overflow-hidden">
         
-        {/* ================= CONTROLES DE FILTRADO ================= */}
+        {/* Controles de Filtrado */}
         <div className="p-6 border-b border-outline-variant/30 bg-surface-container-lowest flex flex-col md:flex-row gap-4 justify-between items-center">
           
-          {/* Buscador de Texto */}
           <div className="relative w-full md:w-96 group">
             <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors text-[22px]">search</span>
             <input 
@@ -108,7 +108,6 @@ export default function Staff() {
             />
           </div>
 
-          {/* Selector de Rol */}
           <div className="flex items-center gap-3 w-full md:w-auto">
             <label className="font-body text-sm font-bold text-on-surface-variant whitespace-nowrap">Filtrar por Rol:</label>
             <div className="relative w-full md:w-48">
@@ -128,7 +127,7 @@ export default function Staff() {
           </div>
         </div>
 
-        {/* ================= TABLA DE RESULTADOS ================= */}
+        {/* Tabla de Resultados */}
         <div className="overflow-x-auto flex-1">
           <table className="w-full text-left border-collapse min-w-[800px]">
             <thead>
@@ -142,7 +141,6 @@ export default function Staff() {
             </thead>
             <tbody className="divide-y divide-outline-variant/20 bg-white">
               
-              {/* Mapeamos el array ya filtrado (filteredStaff) */}
               {filteredStaff.length > 0 ? (
                 filteredStaff.map((staff) => (
                   <tr key={staff.idUsuario} className="hover:bg-surface-container/30 transition-colors group">
@@ -151,7 +149,6 @@ export default function Staff() {
                     <td className="py-4 px-6 font-body text-sm text-on-surface-variant">{staff.correo}</td>
                     <td className="py-4 px-6">
                       
-                      {/* ETIQUETAS DE COLORES DINÁMICAS REINTEGRADAS */}
                       <span className={`inline-flex items-center px-3 py-1 rounded-full font-body text-xs font-bold border
                         ${staff.rol === 'Veterinario' ? 'bg-tertiary-container/30 text-tertiary border-tertiary/20' : 
                           staff.rol === 'Administrador' ? 'bg-primary-container/30 text-primary border-primary/20' : 
@@ -175,7 +172,6 @@ export default function Staff() {
                   </tr>
                 ))
               ) : (
-                /* Estado vacío si no hay resultados en el filtro */
                 <tr>
                   <td colSpan={5} className="py-8 text-center text-on-surface-variant font-body">
                     No se encontraron empleados con los filtros aplicados.
@@ -188,12 +184,11 @@ export default function Staff() {
       </div>
 
       {/* =========================================
-          MODALES (Reutilizan tu estructura anterior)
+          MODAL DE CREAR / EDITAR EMPLEADO
       ========================================= */}
       <Modal isOpen={isFormModalOpen} onClose={() => setIsFormModalOpen(false)} title={isEditing ? "Editar Empleado" : "Registrar Nuevo Empleado"} maxWidth="max-w-4xl">
         <form onSubmit={handleFormSubmit} className="space-y-8">
           
-          {/* SECCIÓN 1: Tabla USUARIO */}
           <div>
             <h4 className="font-display text-lg font-bold text-primary mb-4 border-b border-outline-variant/30 pb-2">1. Datos Personales (Usuario)</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -218,7 +213,6 @@ export default function Staff() {
             </div>
           </div>
 
-          {/* SECCIÓN 2: Tabla EMPLEADO */}
           <div>
             <h4 className="font-display text-lg font-bold text-primary mb-4 border-b border-outline-variant/30 pb-2">2. Datos Laborales (Empleado)</h4>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -228,7 +222,6 @@ export default function Staff() {
             </div>
           </div>
 
-          {/* SECCIÓN 3: Entidades Hijas (Roles) */}
           <div className="bg-surface-container-low p-6 rounded-2xl border border-outline-variant/30">
             <h4 className="font-display text-lg font-bold text-primary mb-4">3. Asignación de Rol y Especialidad</h4>
             
@@ -270,17 +263,55 @@ export default function Staff() {
         </form>
       </Modal>
 
-      <Modal isOpen={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} title="Confirmar Eliminación" maxWidth="max-w-md">
-        <div className="text-center py-4">
-          <div className="w-16 h-16 rounded-full bg-error-container text-error flex items-center justify-center mx-auto mb-4">
-            <span className="material-symbols-outlined text-[32px]">warning</span>
+      {/* =========================================
+          MODAL DE CONFIRMACIÓN DE ELIMINACIÓN
+      ========================================= */}
+      <Modal 
+        isOpen={isDeleteModalOpen} 
+        onClose={() => setIsDeleteModalOpen(false)} 
+        title="Eliminar Personal" 
+        maxWidth="max-w-[480px]" 
+      >
+        <div className="flex flex-col w-full">
+          
+          {/* Distribución Horizontal: Ícono a la izquierda, Texto a la derecha */}
+          <div className="flex flex-row items-start gap-5 mb-6 mt-2">
+            
+            {/* Ícono más compacto y proporcionado */}
+            <div className="w-14 h-14 rounded-full bg-error-container text-error flex items-center justify-center shrink-0 shadow-inner">
+              <span className="material-symbols-outlined text-[28px] icon-fill">warning</span>
+            </div>
+            
+            {/* Contenedor del texto con flex-1 para que ocupe todo el espacio sobrante */}
+            <div className="flex-1 text-left mt-1">
+              <h4 className="font-display text-xl font-bold text-on-surface mb-2">
+                ¿Estás seguro?
+              </h4>
+              {/* w-full asegura que el texto fluya horizontalmente de forma natural */}
+              <p className="font-body text-[15px] text-on-surface-variant w-full leading-relaxed">
+                Esta acción es permanente. Eliminará a este usuario y revocará todos sus accesos al sistema inmediatamente.
+              </p>
+            </div>
+
           </div>
-          <p className="font-body text-lg text-on-surface mb-2 font-bold">¿Estás completamente seguro?</p>
-          <p className="font-body text-sm text-on-surface-variant mb-6">Esta acción no se puede deshacer. Los datos del usuario y sus accesos serán removidos del sistema.</p>
-          <div className="flex justify-center gap-3">
-            <Button variant="outline" onClick={() => setIsDeleteModalOpen(false)}>Cancelar</Button>
-            <Button variant="action" className="bg-error border-error hover:bg-error/90" onClick={confirmDelete}>Sí, Eliminar</Button>
+          
+          {/* Botones alineados a la derecha de forma más sutil */}
+          <div className="flex flex-row justify-end gap-3 w-full pt-5 border-t border-outline-variant/20">
+            <Button 
+              variant="outline" 
+              onClick={() => setIsDeleteModalOpen(false)}
+            >
+              Cancelar
+            </Button>
+            <Button 
+              variant="action" 
+              onClick={confirmDelete} 
+              className="bg-error border-error hover:bg-error/90 shadow-none px-6"
+            >
+              Eliminar
+            </Button>
           </div>
+
         </div>
       </Modal>
 

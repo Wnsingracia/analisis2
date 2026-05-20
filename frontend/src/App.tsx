@@ -2,9 +2,12 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/public/Home';
 import Login from './pages/public/Login';
 import Register from './pages/public/Register';
-import { AdminLayout } from './components/layout/AdminLayout';
+import { AdminLayout } from './components/layout/AdminLayout'; 
 import Dashboard from './pages/admin/Dashboard';
 import Staff from './pages/admin/Staff';
+import Clients from './pages/admin/Clientes'; 
+import Inventory from './pages/admin/Inventory';
+import Appointments from './pages/admin/Appointments';
 
 // 1. IMPORTS DE TODOS LOS ROLES DE VETCARE
 import ClientDashboard from './pages/public/ClientDashBoard';
@@ -43,6 +46,9 @@ function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="staff" element={<Staff />} />
+          <Route path="clients" element={<Clients />} /> 
+          <Route path="inventory" element={<Inventory />} />
+          <Route path="appointments" element={<Appointments />} />
         </Route>
       </Routes>
     </Router>
