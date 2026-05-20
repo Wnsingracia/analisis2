@@ -1,17 +1,74 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+
+// Definimos la estructura que esperamos recibir del administrador en sesión
+interface AdminData {
+  id: number;
+  nombres: string;
+  ap_pat: string;
+  correo: string;
+  tipo_usuario: string;
+}
 
 export default function Dashboard() {
+  const navigate = useNavigate();
+  const [admin, setAdmin] = useState<AdminData | null>(null);
+
+  useEffect(() => {
+    // 1. Recuperamos la sesión guardada al iniciar sesión
+    const sesionGuardada = localStorage.getItem('vetcare_sesion_admin');
+
+    if (!sesionGuardada) {
+      alert("Acceso denegado. Por favor, inicia sesión como Administrador.");
+      navigate('/login');
+      return;
+    }
+
+    const datosUsuario = JSON.parse(sesionGuardada);
+
+    // 2. Control estricto: Si no es un ADMIN, lo expulsamos
+    if (datosUsuario.tipo_usuario !== 'ADMIN') {
+      alert("No tienes permisos de administrador para visualizar este panel.");
+      navigate('/login');
+      return;
+    }
+
+    setAdmin(datosUsuario);
+  }, [navigate]);
+
+  // Si la sesión está cargando, evitamos el parpadeo visual mostrando un loader limpio
+  if (!admin) {
+    return (
+      <div className="flex h-96 items-center justify-center">
+        <p className="font-display text-primary font-bold animate-pulse">Cargando panel administrativo...</p>
+      </div>
+    );
+  }
+
+  // Obtener la fecha actual del sistema formateada localmente
+  const fechaActual = new Date().toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  });
+
   return (
     <>
       {/* Encabezado del Dashboard */}
       <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
         <div>
-          <h2 className="font-display text-4xl text-primary font-bold tracking-tight mb-2">Panel General</h2>
-          <p className="font-body text-lg text-on-surface-variant">Bienvenido de vuelta. Aquí tienes un resumen del día.</p>
+          {/* ◄ Reemplazamos el texto estático por el nombre dinámico del Admin */}
+          <h2 className="font-display text-4xl text-primary font-bold tracking-tight mb-2">
+            Panel General
+          </h2>
+          <p className="font-body text-lg text-on-surface-variant">
+            Bienvenido de vuelta, <strong className="text-primary font-bold">{admin.nombres} {admin.ap_pat}</strong>. Aquí tienes un resumen del día.
+          </p>
         </div>
         <div className="flex items-center gap-2 bg-surface-container px-5 py-2.5 rounded-full border border-outline-variant/30">
           <span className="material-symbols-outlined text-tertiary">today</span>
-          <span className="font-body text-sm font-bold text-on-surface">Octubre 24, 2026</span>
+          {/* ◄ Fecha del día automatizada */}
+          <span className="font-body text-sm font-bold text-on-surface capitalize">{fechaActual}</span>
         </div>
       </div>
 

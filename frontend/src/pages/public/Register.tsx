@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom'; // Agregamos useNavigate para redirigir
 import { Button } from '../../components/ui/Button';
 import { InputField } from '../../components/ui/InputField';
-import logoVetCare2 from '../../assets/logo-VetCare2.jpeg'; // Asegúrate de tener tu logo aquí
+import api from '../../services/api'; // ◄ Importa tu instancia de Axios
+import logoVetCare2 from '../../assets/logo-VetCare2.jpeg';
 
 export default function Register() {
+  const navigate = useNavigate(); // Para mandar al login tras registrarse
   const [formData, setFormData] = useState({
     nombres: '',
     apellidos: '',
@@ -18,13 +20,54 @@ export default function Register() {
     setFormData({ ...formData, [e.target.id]: e.target.value });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // 1. Validaciones básicas de interfaz
     if (formData.password !== formData.confirmPassword) {
       alert("Las contraseñas no coinciden");
       return;
     }
-    console.log('Registrando nuevo cliente:', formData);
+
+    // 2. Mapeo de datos: Ajustamos el formato para Postgres
+    // Separamos los apellidos por si el usuario metió paterno y materno
+    const listaApellidos = formData.apellidos.trim().split(' ');
+    const ap_pat = listaApellidos[0] || '';
+    const ap_mat = listaApellidos.slice(1).join(' ') || null; // Si hay segundo apellido, va aquí
+
+    const datosParaBackend = {
+      nombres: formData.nombres,
+      ap_pat: ap_pat,
+      ap_mat: ap_mat,
+      cel: formData.telefono,
+      correo: formData.email,
+      genero: 'Otro', // Valor por defecto del enum ["M", "F", "Otro"] si no hay selector
+      contrasenia: formData.password,
+      tipo_usuario: 'CLIENTE', // ◄ Forzamos que sea Cliente
+      
+      // Atributos obligatorios en tu Postgres para la herencia de clientes
+      nro_cuenta: '000000',                     
+      direccion: 'Por definir en sucursal', 
+      nit: '0'                                  
+    };
+
+    // 3. Petición HTTP al backend NestJS
+    try {
+      const response = await api.post('/usuarios', datosParaBackend);
+      
+      // Si el backend responde con éxito
+      alert(`${response.data.mensaje} - Tu ID asignado es: ${response.data.id_usuario}`);
+      
+      // Redireccionar al login
+      navigate('/login');
+      
+    } catch (error: any) {
+      console.error('Error al registrar cliente:', error);
+      
+      // Capturamos mensajes de error específicos enviados por NestJS (Ej: Correo duplicado)
+      const mensajeError = error.response?.data?.message || 'Hubo un problema con el servidor.';
+      alert(`Error en el registro: ${mensajeError}`);
+    }
   };
 
   return (
@@ -40,7 +83,6 @@ export default function Register() {
         <div className="absolute -bottom-20 -left-20 w-56 h-56 bg-surface-container rounded-full -z-10 opacity-60"></div>
 
         <header className="flex flex-col items-center justify-center mb-8 text-center">
-          {/* Logo de la Veterinaria */}
           <img src={logoVetCare2} alt="VetCare Logo" className="h-14 object-contain rounded-xl mb-4 shadow-sm" />
           <h2 className="font-display text-2xl font-bold text-primary tracking-wide">VetCare</h2>
           <p className="font-body text-[11px] font-bold text-on-surface-variant tracking-widest uppercase mt-0.5">
@@ -52,12 +94,11 @@ export default function Register() {
           <div className="text-center mb-8">
             <h1 className="font-display text-3xl font-bold text-primary tracking-wide inline-block relative">
               Registro de Nuevo Usuario
-              {/* Subrayado decorativo basado en tu boceto */}
               <div className="absolute -bottom-2 left-0 w-full h-1.5 bg-primary-container/30 rounded-full"></div>
             </h1>
           </div>
 
-          {/* Fila 1: Nombres y Apellidos (2 columnas en desktop) */}
+          {/* Fila 1: Nombres y Apellidos */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <InputField 
               label="Nombre(s):" 
@@ -79,7 +120,7 @@ export default function Register() {
             />
           </div>
 
-          {/* Fila 2: Correo (1 columna) */}
+          {/* Fila 2: Correo */}
           <InputField 
             label="Correo Electrónico:" 
             icon="mail"
@@ -91,17 +132,17 @@ export default function Register() {
             required
           />
           <InputField 
-              label="Teléfono Celular:" 
-              icon="call"
-              id="telefono"
-              type="tel"
-              placeholder="Ej. 70012345"
-              value={formData.telefono}
-              onChange={handleChange}
-              required
-            />
+            label="Teléfono Celular:" 
+            icon="call"
+            id="telefono"
+            type="tel"
+            placeholder="Ej. 70012345"
+            value={formData.telefono}
+            onChange={handleChange}
+            required
+          />
 
-          {/* Fila 3: Contraseñas (2 columnas en desktop) */}
+          {/* Fila 3: Contraseñas */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <InputField 
               label="Contraseña:" 
