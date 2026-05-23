@@ -14,6 +14,7 @@ import ClientDashboard from './pages/public/ClientDashBoard';
 import VeterinarioDashboard from './pages/public/VeterinarioDashBoard';
 import EstilistaDashboard from './pages/public/EstilistaDashBoard';
 import RecepcionistaDashboard from './pages/public/RecepcionistaDashBoard';
+import ClinicalHistory from './pages/admin/ClinicalHistory';
 function App() {
   return (
     <Router>
@@ -28,16 +29,9 @@ function App() {
         {/* ==========================================
             ENTORNOS PRIVADOS POR ROL (INDEPENDIENTES)
            ========================================== */}
-        {/* Panel del Cliente */}
         <Route path="/dashboard-cliente" element={<ClientDashboard />} />
-
-        {/* Panel del Veterinario */}
         <Route path="/dashboard-veterinario" element={<VeterinarioDashboard />} />
-
-        {/* Panel del Estilista */}
         <Route path="/dashboard-estilista" element={<EstilistaDashboard />} />
-
-        {/* Panel del Recepcionista */}
         <Route path="/dashboard-recepcionista" element={<RecepcionistaDashboard />} />
         
         {/* ==========================================
@@ -49,6 +43,7 @@ function App() {
           <Route path="clients" element={<Clients />} /> 
           <Route path="inventory" element={<Inventory />} />
           <Route path="appointments" element={<Appointments />} />
+          <Route path="clinical-history/:idMascota" element={<ClinicalHistory />} />
         </Route>
       </Routes>
     </Router>
