@@ -8,6 +8,8 @@ import Staff from './pages/admin/Staff';
 import Clients from './pages/admin/Clientes'; 
 import Inventory from './pages/admin/Inventory';
 import Appointments from './pages/admin/Appointments';
+import ForgotPassword from './pages/public/ForgotPassword';
+import ResetPassword from './pages/public/ResetPassword';
 
 // 1. IMPORTS DE TODOS LOS ROLES DE VETCARE
 import ClientDashboard from './pages/public/ClientDashBoard';
@@ -25,6 +27,8 @@ function App() {
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password" element={<ResetPassword />} />
         
         {/* ==========================================
             ENTORNOS PRIVADOS POR ROL (INDEPENDIENTES)

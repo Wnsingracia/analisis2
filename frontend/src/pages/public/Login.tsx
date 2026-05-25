@@ -108,13 +108,13 @@ export default function Login() {
               </label>
             </div>
             
-            <button
+            <Link
+              to="/forgot-password"
               className="text-[15px] font-bold text-tertiary hover:text-tertiary-container hover:underline flex items-center gap-1 transition-colors font-body"
-              type="button"
             >
-              <span className="material-symbols-outlined text-[18px]">help</span>
+            <span className="material-symbols-outlined text-[18px]">help</span>
               ¿Olvidaste tu contraseña?
-            </button>
+            </Link>
           </div>
 
           <div className="pt-4 relative">

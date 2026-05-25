@@ -41,11 +41,17 @@ export class UsuariosController {
         return this.usuarioServicio.obtClientePorId(id);
     }
 
+        @Get('empleados')
+async obtenerTodosLosEmpleados() {
+    return this.usuarioServicio.obtenerTodosLosEmpleados();
+}
+
     // 7. Obtener un usuario genérico por su ID (Al final de todo)
     @Get(':id')
     async obtUsuario(@Param('id', ParseIntPipe) id: number){
         return this.usuarioServicio.obtUsuario(id);
     }
+
 
     // 8. Insertar un usuario
     @Post()
@@ -56,4 +62,13 @@ export class UsuariosController {
 async login(@Body() credenciales: any) {
     return this.usuarioServicio.login(credenciales);
 }
+    @Post('recuperar-password') // ◄ AQUÍ NO DEBE DECIR 'usuarios/recuperar-password'
+    async solicitarRecuperacion(@Body('correo') correo: string) {
+        return this.usuarioServicio.solicitarRecuperacion(correo);
+    }
+
+    @Post('reset-password')
+    async restablecerContrasenia(@Body('token') token: string, @Body('contrasenia') contrasenia: string) {
+        return this.usuarioServicio.restablecerContrasenia(token, contrasenia);
+    }
 }
