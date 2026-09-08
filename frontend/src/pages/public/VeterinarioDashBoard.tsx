@@ -66,16 +66,24 @@ export default function VeterinarioDashboard() {
             <p className="font-body text-xs text-on-surface-variant mt-1">ID Personal: <strong className="text-black">{vet.id}</strong></p>
           </div>
           <div className="bg-white p-6 rounded-2xl border border-outline-variant/40 shadow-sm col-span-2">
-            <h3 className="font-display font-bold text-primary mb-4">Gestión de Pacientes</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="p-3 bg-surface-container rounded-xl cursor-pointer hover:bg-primary-container/20 transition-colors">
-                <p className="font-display font-bold text-xs text-primary">📋 Consultas Pendientes</p>
-              </div>
-              <div className="p-3 bg-surface-container rounded-xl cursor-pointer hover:bg-primary-container/20 transition-colors">
-                <p className="font-display font-bold text-xs text-primary">💉 Historiales Clínicos</p>
-              </div>
-            </div>
-          </div>
+  <h3 className="font-display font-bold text-primary mb-4">Gestión de Pacientes</h3>
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    
+    <div className="p-3 bg-surface-container rounded-xl cursor-pointer hover:bg-primary-container/20 transition-colors">
+      <p className="font-display font-bold text-xs text-primary">📋 Consultas Pendientes</p>
+    </div>
+    
+    {/* 🔒 BOTÓN INTERACTIVO CONECTADO A POSTGRES */}
+    <div 
+      onClick={() => navigate('/vet/mis-pacientes')} // ◄ Nueva ruta asignada
+      className="p-3 bg-surface-container rounded-xl cursor-pointer hover:bg-primary-container/20 border border-transparent hover:border-primary/20 transition-all group flex items-center justify-between"
+    >
+      <p className="font-display font-bold text-xs text-primary">💉 Historiales Clínicos</p>
+      <span className="material-symbols-outlined text-primary text-sm opacity-0 group-hover:opacity-100 transition-opacity">arrow_forward</span>
+    </div>
+
+  </div>
+</div>
         </section>
       </main>
     </div>

@@ -1,11 +1,18 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: 'http://localhost:3000',
-  headers: {
-    'Content-Type': 'application/json',
-  },
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3000',
 });
 
-// ◄ ¡ESTA LÍNEA ES LA QUE FALTA! Asegúrate de poner "default"
+// Interceptor para inyectar el JWT de forma global en las cabeceras HTTP
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('vetcare_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+}, (error) => {
+  return Promise.reject(error);
+});
+
 export default api;

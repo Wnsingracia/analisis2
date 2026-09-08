@@ -1,12 +1,16 @@
 import { Injectable, Inject, BadRequestException, InternalServerErrorException } from '@nestjs/common';
-import * as pg from 'pg';
+import { Pool } from 'pg';
 import * as bcrypt from 'bcrypt'
 import * as crypto from 'crypto';
 import * as nodemailer from 'nodemailer';
+import { JwtService } from '@nestjs/jwt';
 
 @Injectable()
 export class UsuariosService {
-    constructor(@Inject('veterinaria_db') private pool: pg.Pool) {}
+    constructor(
+        @Inject('veterinaria_db')private pool: Pool, // Tu pool de conexión de Postgres
+        private jwtService: JwtService // ◄ NUEVO
+    ) {}
 
     // ==========================================
     // MÉTODOS DE OBTENCIÓN (SELECTS CON JOIN)
@@ -35,6 +39,37 @@ export class UsuariosService {
         return resultado.rows;
     }
 
+    async obtenerCitasConTratamientos() {
+    const query = `
+        SELECT 
+            c.id_cita,
+            c.fecha,
+            c.hora,
+            c.tipo,
+            c.descripcion AS cita_descripcion,
+            c.costo,
+            c.id_mascota,
+            c.id_cliente,
+            c.id_recepcionista,
+            t.id_tratamiento, -- ◄ CORREGIDO: id_tratamiento en lugar de id_treatment
+            t.descripcion AS tratamiento_descripcion,
+            t.fecha_emision
+        FROM citas c
+        LEFT JOIN consultas_medicas cm ON c.id_cita = cm.id_cita
+        LEFT JOIN tratamientos t ON cm.id_cons_medica = t.id_cons_medica
+        ORDER BY c.fecha DESC, c.hora DESC
+    `;
+
+    try {
+        const resultado = await this.pool.query(query);
+        return resultado.rows;
+    } catch (error: any) {
+        // Esto te pintará el error exacto de Postgres en la consola de NestJS para que no adivines
+        console.error("Error en Postgres:", error.message); 
+        throw new InternalServerErrorException('Error al sincronizar la agenda médica desde Postgres.');
+    }
+}
+
     // Obtener Estilistas (usuarios -> empleados -> estilistas)
     async obtTodosLosEstilistas() {
         const query = `
@@ -48,6 +83,42 @@ export class UsuariosService {
         return resultado.rows;
     }
 
+async obtenerPacientesPorVeterinario(idVeterinario: number) {
+  // Usamos \"idMascota\" asumiendo que se guardó en camelCase en consultas_medicas
+  const query = `
+    SELECT 
+        m.id_mascota,
+        m.nombre,
+        m.tipo,
+        m.raza,
+        m.edad,
+        m.genero,
+        (u.nombres || ' ' || u.ap_pat) AS dueno_nombre,
+        (
+            SELECT MAX(cm.fecha) 
+            FROM consultas_medicas cm 
+            WHERE cm."idMascota" = m.id_mascota AND cm.id_veterinario = $1
+        ) AS ultima_consulta
+    FROM mascotas m
+    JOIN usuarios u ON m.id_cliente = u.id_usuario
+    WHERE m.id_mascota IN (
+        SELECT DISTINCT "idMascota" 
+        FROM consultas_medicas 
+        WHERE id_veterinario = $1
+    )
+    ORDER BY ultima_consulta DESC
+  `;
+
+  try {
+    const resultado = await this.pool.query(query, [idVeterinario]);
+    return resultado.rows;
+  } catch (error: any) {
+    console.error("--- ERROR REAL DE POSTGRES ---");
+    console.error(error.message);
+    console.error("------------------------------");
+    throw new InternalServerErrorException('Error al obtener los pacientes del veterinario.');
+  }
+}
     // Obtener Recepcionistas (usuarios -> empleados -> recepcionistas)
     async obtTodosLosRecepcionistas() {
         const query = `
@@ -287,44 +358,45 @@ async obtenerTodosLosEmpleados() {
     }
 }
 async login(credenciales: any) {
-    const { correo, contrasenia } = credenciales;
+        const { correo, contrasenia } = credenciales;
 
-    // 1. Buscamos al usuario ÚNICAMENTE por correo
-    const query = `
-        SELECT u.id_usuario, u.nombres, u.ap_pat, u.correo, u.contrasenia, u.tipo_usuario, c.direccion, c.nro_cuenta
-        FROM usuarios u
-        LEFT JOIN clientes c ON u.id_usuario = c.id_usuario
-        WHERE u.correo = $1
-    `;
-    
-    const resultado = await this.pool.query(query, [correo]);
+        // 1. Buscamos al usuario por correo
+        const query = `SELECT id_usuario, nombres, ap_pat, correo, contrasenia, tipo_usuario FROM usuarios WHERE correo = $1`;
+        const resultado = await this.pool.query(query, [correo]);
 
-    // Si no encuentra el correo
-    if (resultado.rows.length === 0) {
-        throw new BadRequestException('Correo o contraseña incorrectos');
-    }
-
-    const usuarioLogueado = resultado.rows[0];
-
-    // 2. Comparamos la contraseña en texto plano con el HASH de la base de datos
-    const contraseniaEsValida = await bcrypt.compare(contrasenia, usuarioLogueado.contrasenia);
-
-    // Si no coinciden, rebotamos el acceso
-    if (!contraseniaEsValida) {
-        throw new BadRequestException('Correo o contraseña incorrectos');
-    }
-
-    // 3. Si todo está bien, retornamos los datos limpios
-    return {
-        mensaje: 'Inicio de sesión correcto',
-        cliente: {
-            id: usuarioLogueado.id_usuario,
-            nombres: usuarioLogueado.nombres,
-            ap_pat: usuarioLogueado.ap_pat,
-            correo: usuarioLogueado.correo,
-            tipo_usuario: usuarioLogueado.tipo_usuario,
-            nro_cuenta: usuarioLogueado.nro_cuenta
+        if (resultado.rows.length === 0) {
+            throw new BadRequestException('Correo o contraseña incorrectos');
         }
-    };
-}
+
+        const usuarioLogueado = resultado.rows[0];
+
+        // 2. Comparamos los hashes de bcrypt
+        const contraseniaEsValida = await bcrypt.compare(contrasenia, usuarioLogueado.contrasenia);
+        if (!contraseniaEsValida) {
+            throw new BadRequestException('Correo o contraseña incorrectos');
+        }
+
+        // 3. GENERAMOS EL PAYLOAD (La información inalterable cifrada dentro del JWT)
+        const payload = { 
+            id_usuario: usuarioLogueado.id_usuario, 
+            tipo_usuario: usuarioLogueado.tipo_usuario,
+            correo: usuarioLogueado.correo 
+        };
+
+        // 4. Firmamos el token criptográficamente
+        const token = this.jwtService.sign(payload);
+
+        // 5. Retornamos la respuesta estándar de industria
+        // En tu usuarios.service.ts (dentro del return final del método login)
+return {
+    mensaje: 'Inicio de sesión correcto',
+    accessToken: token,
+    usuario: {
+        id_usuario: usuarioLogueado.id_usuario, // ◄ ¡ASEGÚRATE DE DEVOLVER ESTO!
+        nombres: usuarioLogueado.nombres,
+        ap_pat: usuarioLogueado.ap_pat,
+        tipo_usuario: usuarioLogueado.tipo_usuario
+    }
+};
+    }
 }

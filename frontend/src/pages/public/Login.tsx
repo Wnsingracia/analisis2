@@ -17,36 +17,50 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      // 1. Enviamos los datos al backend
+      // 1. Enviamos las credenciales al backend
       const response = await api.post('/usuarios/login', {
         correo: email,
         contrasenia: password,
       });
 
-      // El backend nos devuelve los datos unificados del usuario en 'cliente'
-      const usuarioLogueado = response.data.cliente; 
+      // 2. Extraemos el Token JWT y el sub-objeto del usuario desde la nueva estructura del NestJS
+      const { accessToken, usuario } = response.data; 
 
-      // 2. Evaluamos el rol (tipo_usuario) que viene desde Postgres
-      if (usuarioLogueado.tipo_usuario === 'ADMIN') {
-    localStorage.setItem('vetcare_sesion_admin', JSON.stringify(usuarioLogueado));
-    navigate('/admin/dashboard');
-} else if (usuarioLogueado.tipo_usuario === 'CLIENTE') {
-    localStorage.setItem('vetcare_sesion', JSON.stringify(usuarioLogueado));
-    navigate('/dashboard-cliente');
-} else if (usuarioLogueado.tipo_usuario === 'VETERINARIO') {
-    localStorage.setItem('vetcare_sesion_vet', JSON.stringify(usuarioLogueado));
-    navigate('/dashboard-veterinario');
-} else if (usuarioLogueado.tipo_usuario === 'ESTILISTA') {
-    localStorage.setItem('vetcare_sesion_estilista', JSON.stringify(usuarioLogueado));
-    navigate('/dashboard-estilista');
-} else if (usuarioLogueado.tipo_usuario === 'RECEPCIONISTA') {
-    localStorage.setItem('vetcare_sesion_recepcion', JSON.stringify(usuarioLogueado));
-    navigate('/dashboard-recepcionista');
-}
+      if (!accessToken) {
+        throw new Error('El servidor no retornó un token de autorización válido.');
+      }
+
+      // 3. PERSISTENCIA GLOBAL: Guardamos el JWT para que el interceptor de Axios lo firme en cada petición
+      localStorage.setItem('vetcare_token', accessToken);
+
+      // 4. Evaluamos el rol (tipo_usuario) para guardar su sesión y redirigir al dashboard correcto
+      const tipoUsuario = usuario.tipo_usuario;
+
+      if (tipoUsuario === 'ADMIN') {
+        localStorage.setItem('vetcare_sesion_admin', JSON.stringify(usuario));
+        navigate('/admin/dashboard');
+        
+      } else if (tipoUsuario === 'CLIENTE') {
+        localStorage.setItem('vetcare_sesion', JSON.stringify(usuario));
+        navigate('/dashboard-cliente');
+        
+      } else if (tipoUsuario === 'VETERINARIO') {
+        localStorage.setItem('vetcare_sesion_vet', JSON.stringify(usuario));
+        navigate('/dashboard-veterinario');
+        
+      } else if (tipoUsuario === 'ESTILISTA') {
+        localStorage.setItem('vetcare_sesion_estilista', JSON.stringify(usuario));
+        navigate('/dashboard-estilista');
+        
+      } else if (tipoUsuario === 'RECEPCIONISTA') {
+        localStorage.setItem('vetcare_sesion_recepcion', JSON.stringify(usuario));
+        navigate('/dashboard-recepcionista');
+      }
 
     } catch (error: any) {
       console.error('Error en el inicio de sesión:', error);
-      const mensajeError = error.response?.data?.message || 'No se pudo conectar con el servidor.';
+      // Atrapamos el mensaje descriptivo del BadRequestException de NestJS
+      const mensajeError = error.response?.data?.message || 'Credenciales incorrectas o problemas de conexión.';
       alert(`Error de ingreso: ${mensajeError}`);
     }
   };

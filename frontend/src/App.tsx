@@ -17,6 +17,8 @@ import VeterinarioDashboard from './pages/public/VeterinarioDashBoard';
 import EstilistaDashboard from './pages/public/EstilistaDashBoard';
 import RecepcionistaDashboard from './pages/public/RecepcionistaDashBoard';
 import ClinicalHistory from './pages/admin/ClinicalHistory';
+import MisPacientes from './pages/public/MisPacientes';
+
 function App() {
   return (
     <Router>
@@ -37,6 +39,7 @@ function App() {
         <Route path="/dashboard-veterinario" element={<VeterinarioDashboard />} />
         <Route path="/dashboard-estilista" element={<EstilistaDashboard />} />
         <Route path="/dashboard-recepcionista" element={<RecepcionistaDashboard />} />
+        <Route path="/vet/mis-pacientes" element={<MisPacientes />} />
         
         {/* ==========================================
             ENTORNO PRIVADO DEL ADMINISTRADOR (CON LAYOUT)
