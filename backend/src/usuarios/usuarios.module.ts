@@ -9,36 +9,33 @@ import * as path from 'path';
 
 @Module({
   imports: [
-    PassportModule.register({defaultStrategy: 'jwt'}),
+    PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.register({
-      secret: 'CLAVE_SUPER_SECRETA_VETCARE_2026', // ◄ Cambia esto en producción
-      signOptions: { 
-        expiresIn: '24h' // ◄ El token expirará automáticamente en un día
+      secret: 'CLAVE_SUPER_SECRETA_VETCARE_2026',
+      signOptions: {
+        expiresIn: '24h',
       },
     }),
   ],
   controllers: [UsuariosController],
-  providers: [UsuariosService,
-    {
-      provide: 'veterinaria_db',
-    useFactory: () =>{
+ providers: [
+  UsuariosService,
+  {
+    provide: 'veterinaria_db',
+    useFactory: () => {
       return new Pool({
-        host: '100.76.48.82',
-        user: 'postgres',
-        password: '123456',
-        database: 'veterinaria_db',
-        port: 5432,
+        host: 'aws-0-us-east-1.pooler.supabase.com', // Región exacta de tu proyecto
+        user: 'postgres.vhxgowopivfjhojlukce',
+        password: 'ManadaC0rp1',
+        database: 'postgres',
+        port: 6543, // Puerto obligatorio para el Pooler IPv4
         ssl: {
-          rejectUnauthorized: true, // Validación estricta con CA propia
-          ca: fs.readFileSync(path.resolve('./certs/rootCA.crt')).toString(),
-          cert: fs.readFileSync(path.resolve('./certs/client.crt')).toString(),
-          key: fs.readFileSync(path.resolve('./certs/client.key')).toString(),
-          checkServerIdentity: () => undefined,
-        }
-      })
-    }
-    }
-  ],
-  exports: [JwtModule, PassportModule]
+          rejectUnauthorized: false,
+        },
+      });
+    },
+  },
+],
+  exports: [JwtModule, PassportModule],
 })
 export class UsuariosModule {}
