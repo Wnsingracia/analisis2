@@ -1,0 +1,32 @@
+id_cons_medica,fecha,hora,costo,especialidad,ambiente,id_veterinario,id_cita,idMascota
+201,2026-05-10,08:45:00,120.00,Pediatría y Neonatología,Consultorio A,100010,101,2
+202,2026-05-10,09:30:00,150.00,Dermatología Veterinaria,Consultorio B,100008,102,4
+203,2026-05-11,10:15:00,650.00,Cirugía de Tejidos Blandos,Quirófano 1,100007,103,3
+204,2026-05-11,14:45:00,120.00,Traumatología y Ortopedia,Sala de Yesos,100009,104,6
+205,2026-05-12,16:15:00,400.00,Urgencias y Cuidados Críticos,UCI Quirúrgica,100011,106,16
+206,2026-05-13,09:20:00,120.00,Oftalmología Veterinaria,Consultorio C,100015,107,18
+207,2026-05-13,10:45:00,130.00,Medicina General,Consultorio A,100006,108,1
+208,2026-05-14,08:30:00,500.00,Odontología Animal,Sala Dental,100016,109,7
+209,2026-05-14,11:30:00,120.00,Medicina General,Consultorio B,100006,110,8
+210,2026-05-15,15:20:00,150.00,Medicina General,Consultorio C,100010,111,12
+211,2026-05-15,17:45:00,550.00,Urgencias y Cuidados Críticos,Trauma Shock,100011,112,5
+212,2026-05-16,09:15:00,120.00,Medicina General,Consultorio A,100006,113,10
+213,2026-05-16,10:15:00,120.00,Medicina General,Consultorio B,100010,114,11
+214,2026-05-17,08:45:00,120.00,Medicina General,Consultorio A,100006,115,14
+215,2026-05-17,14:15:00,160.00,Cardiología Veterinaria,Sala de Eco,100012,116,24
+216,2026-05-18,09:45:00,140.00,Dermatología Veterinaria,Consultorio B,100008,117,15
+217,2026-05-18,11:15:00,130.00,Medicina General,Consultorio C,100006,118,9
+218,2026-05-19,08:45:00,800.00,Cirugía de Tejidos Blandos,Quirófano 1,100007,119,19
+219,2026-05-19,17:00:00,350.00,Urgencias y Cuidados Críticos,Trauma Shock,100011,120,20
+220,2026-05-20,09:15:00,110.00,Nutrición Clínica,Consultorio Especial,100017,121,21
+221,2026-05-20,10:45:00,120.00,Medicina General,Consultorio B,100006,122,22
+222,2026-05-21,11:15:00,100.00,Odontología Animal,Sala Dental,100016,123,23
+223,2026-05-21,15:45:00,90.00,Medicina General,Consultorio A,100006,124,25
+224,2026-05-22,08:30:00,950.00,Traumatología y Ortopedia,Quirófano 2,100009,125,26
+225,2026-05-22,11:00:00,140.00,Dermatología Veterinaria,Consultorio B,100008,126,27
+226,2026-05-23,14:15:00,200.00,Oncología Felina y Canina,Sala Onco,100013,127,28
+227,2026-05-23,16:15:00,120.00,Traumatología y Ortopedia,Sala de Yesos,100009,128,30
+228,2026-05-24,09:15:00,130.00,Medicina General,Consultorio A,100006,129,31
+229,2026-05-24,11:45:00,110.00,Nutrición Clínica,Consultorio Especial,100017,130,32
+230,2026-05-24,15:15:00,120.00,Medicina General,Consultorio C,100006,131,33
+231,2026-05-24,18:15:00,300.00,Urgencias y Cuidados Críticos,UCI,100011,132,17

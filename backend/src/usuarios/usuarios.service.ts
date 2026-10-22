@@ -12,9 +12,6 @@ export class UsuariosService {
         private jwtService: JwtService // ◄ NUEVO
     ) {}
 
-    // ==========================================
-    // MÉTODOS DE OBTENCIÓN (SELECTS CON JOIN)
-    // ==========================================
 
     async obtTodo() {
         const resultado = await this.pool.query('SELECT * FROM usuarios');
