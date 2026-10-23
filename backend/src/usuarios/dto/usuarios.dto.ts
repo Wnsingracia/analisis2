@@ -1,12 +1,20 @@
 import {
-  IsOptional,
   IsEmail,
-  IsString,
+  IsIn,
   IsNotEmpty,
+  IsNumberString,
+  IsOptional,
+  IsString,
   Length,
-  IsNumber,
-  IsDateString,
 } from 'class-validator';
+
+export const TIPOS_USUARIO = [
+  'ADMIN',
+  'CLIENTE',
+  'RECEPCIONISTA',
+  'VETERINARIO',
+  'ESTILISTA',
+] as const;
 
 export class CreateUserDto {
   @IsOptional()
@@ -25,12 +33,12 @@ export class CreateUserDto {
   ap_mat?: string;
 
   @IsOptional()
-  @IsString({ message: 'El número celular debe ser válido' })
+  @IsNumberString({}, { message: 'El número celular debe contener solo dígitos' })
   cel?: string;
 
-  @IsOptional()
+  @IsNotEmpty({ message: 'El correo es obligatorio' })
   @IsEmail({}, { message: 'El correo electrónico debe ser una dirección válida' })
-  correo?: string;
+  correo!: string;
 
   @IsOptional()
   @IsString({ message: 'El género debe ser texto' })
@@ -41,11 +49,15 @@ export class CreateUserDto {
   @Length(6, 255, { message: 'La contraseña debe tener por lo menos 6 caracteres' })
   contrasenia!: string;
 
-  @IsOptional()
-  @IsString({ message: 'El tipo de usuario debe ser texto' })
-  tipo_usuario?: string;
+  @IsIn(TIPOS_USUARIO, {
+    message: `El tipo de usuario debe ser uno de: ${TIPOS_USUARIO.join(', ')}`,
+  })
+  tipo_usuario!: string;
 }
 
+// Solo datos personales y contraseña. Los campos de seguridad
+// (reset_token, intentos_fallidos, bloqueado_hasta, fecha_creacion)
+// y tipo_usuario NO se pueden modificar desde aquí.
 export class UpdateUserDto {
   @IsOptional()
   @IsString({ message: 'Los nombres deben ser texto' })
@@ -63,7 +75,7 @@ export class UpdateUserDto {
   ap_mat?: string;
 
   @IsOptional()
-  @IsString({ message: 'El número celular debe ser válido' })
+  @IsNumberString({}, { message: 'El número celular debe contener solo dígitos' })
   cel?: string;
 
   @IsOptional()
@@ -78,28 +90,4 @@ export class UpdateUserDto {
   @IsString({ message: 'La contraseña debe ser texto' })
   @Length(6, 255, { message: 'La contraseña debe tener por lo menos 6 caracteres' })
   contrasenia?: string;
-
-  @IsOptional()
-  @IsString({ message: 'El tipo de usuario debe ser texto' })
-  tipo_usuario?: string;
-
-  @IsOptional()
-  @IsString()
-  reset_token?: string;
-
-  @IsOptional()
-  @IsString()
-  reset_token_expira?: string;
-
-  @IsOptional()
-  @IsNumber({}, { message: 'Los intentos fallidos deben ser un número' })
-  intentos_fallidos?: number;
-
-  @IsOptional()
-  @IsString()
-  bloqueado_hasta?: string;
-
-  @IsOptional()
-  @IsDateString({}, { message: 'La fecha de creación debe tener formato de fecha válido' })
-  fecha_creacion?: string;
 }

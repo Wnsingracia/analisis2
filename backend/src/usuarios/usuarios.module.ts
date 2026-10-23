@@ -1,41 +1,41 @@
 import { Module } from '@nestjs/common';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+
 import { UsuariosController } from './usuarios.controller';
 import { UsuariosService } from './usuarios.service';
-import { JwtModule } from '@nestjs/jwt';
-import { PassportModule } from '@nestjs/passport';
-import { Pool } from 'pg';
-import * as fs from 'fs';
-import * as path from 'path';
+
+import { Usuario } from './entities/usuario.entity';
+import { Administradores } from 'src/administradores/entities/administradores.entity';
+import { Cliente } from 'src/clientes/entities/clientes.entity';
+import { Empleado } from 'src/empleados/entities/empleados.entity';
+import { Veterinario } from 'src/veterinarios/entities/veterinarios.entity';
+import { Estilista } from 'src/estilistas/entities/estilistas.entity';
+import { Recepcionista } from 'src/recepcionistas/entities/recepcionistas.entity';
 
 @Module({
   imports: [
-    PassportModule.register({ defaultStrategy: 'jwt' }),
-    JwtModule.register({
-      secret: 'CLAVE_SUPER_SECRETA_VETCARE_2026',
-      signOptions: {
-        expiresIn: '24h',
-      },
+    TypeOrmModule.forFeature([
+      Usuario,
+      Administradores,
+      Cliente,
+      Empleado,
+      Veterinario,
+      Estilista,
+      Recepcionista,
+    ]),
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET') || 'secretKeyVetCare',
+        signOptions: { expiresIn: '8h' },
+      }),
     }),
   ],
   controllers: [UsuariosController],
- providers: [
-  UsuariosService,
-  {
-    provide: 'veterinaria_db',
-    useFactory: () => {
-      return new Pool({
-        host: 'aws-0-us-east-1.pooler.supabase.com', // Región exacta de tu proyecto
-        user: 'postgres.vhxgowopivfjhojlukce',
-        password: 'ManadaC0rp1',
-        database: 'postgres',
-        port: 6543, // Puerto obligatorio para el Pooler IPv4
-        ssl: {
-          rejectUnauthorized: false,
-        },
-      });
-    },
-  },
-],
-  exports: [JwtModule, PassportModule],
+  providers: [UsuariosService],
+  exports: [UsuariosService], 
 })
 export class UsuariosModule {}
