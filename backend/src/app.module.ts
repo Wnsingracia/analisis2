@@ -1,4 +1,9 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { VeterinariosModule } from './veterinarios/veterinarios.module';
 import { AdministradoresModule } from './administradores/administradores.module';
@@ -10,27 +15,50 @@ import { EstilistasModule } from './estilistas/estilistas.module';
 import { MascotasModule } from './mascotas/mascotas.module';
 import { RecepcionistasModule } from './recepcionistas/recepcionistas.module';
 import { TratamientosModule } from './tratamientos/tratamientos.module';
-import { ConfigModule, ConfigService } from '@nestjs/config';
-import { TypeOrmModule } from '@nestjs/typeorm';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
-  imports: [ConfigModule.forRoot({isGlobal:true}),
-    TypeOrmModule.forRootAsync({
-      imports:[ConfigModule],
-      useFactory: async (ConfigService: ConfigService) =>({
-        type: 'postgres',
-        host: ConfigService.get('DB_HOST'),
-        port: ConfigService.get<number>('DB_PORT'),
-        username: ConfigService.get('DB_USERNAME'),
-        password: ConfigService.get('DB_PASSWORD'),
-        database: ConfigService.get('DB_DATABASE'),
-        autoLoadEntities:true,
-        synchronize:true
+  imports: [
+    ConfigModule.forRoot({ isGlobal: true }),
+
+    PassportModule.register({ defaultStrategy: 'jwt' }),
+
+    JwtModule.registerAsync({
+      global: true,
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.getOrThrow<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '8h' },
       }),
-      inject: [ConfigService]
     }),
-    UsuariosModule, VeterinariosModule, AdministradoresModule, CitasModule, ClientesModule, ConsultasModule, EmpleadosModule, EstilistasModule, MascotasModule, RecepcionistasModule, TratamientosModule],
-  controllers: [],
-  providers: [],
+
+    TypeOrmModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        type: 'postgres',
+        host: config.getOrThrow<string>('DB_HOST'),
+        port: Number(config.getOrThrow<string>('DB_PORT')),
+        username: config.getOrThrow<string>('DB_USERNAME'),
+        password: config.getOrThrow<string>('DB_PASSWORD'),
+        database: config.getOrThrow<string>('DB_DATABASE'),
+        autoLoadEntities: true,
+        synchronize: false,
+        ssl: { rejectUnauthorized: false },
+      }),
+    }),
+
+    UsuariosModule,
+    VeterinariosModule,
+    AdministradoresModule,
+    CitasModule,
+    ClientesModule,
+    ConsultasModule,
+    EmpleadosModule,
+    EstilistasModule,
+    MascotasModule,
+    RecepcionistasModule,
+    TratamientosModule,
+    AuthModule,
+  ],
 })
 export class AppModule {}

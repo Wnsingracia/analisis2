@@ -1,99 +1,64 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Post, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Put,
+  Delete,
+  Param,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
 import { UsuariosService } from './usuarios.service';
-import { JwtAuthGuard } from 'src/guards/JwtAuthGuard';
+import { CreateUserDto, UpdateUserDto } from './dto/usuarios.dto';
+import { JwtAuthGuard } from 'src/guards/JwtAuthGuard'; //[cite: 18]
 
 @Controller('usuarios')
 export class UsuariosController {
-    constructor(private readonly usuarioServicio: UsuariosService){}
+  constructor(private readonly usuarioServicio: UsuariosService) {}
 
-    // =========================================================================
-    // 1. RUTAS PÚBLICAS / MÓDULOS ESPECÍFICOS (Primero las fijas sin parámetros)
-    // =========================================================================
+  // =========================================================================
+  // 1. RUTAS DE LECTURA (GET)
+  // =========================================================================
 
-    @Get('administradores')
-    async obtTodosLosAdministradores() {
-        return this.usuarioServicio.obtTodosLosAdministradores();
-    }
+  @Get()
+  async obtTodo() {
+    return this.usuarioServicio.obtTodo();
+  }
 
-    @Get('veterinarios')
-    async obtTodosLosVeterinarios() {
-        return this.usuarioServicio.obtTodosLosVeterinarios();
-    }
+  @Get(':id')
+  async obtUsuario(@Param('id') id: string) {
+    return this.usuarioServicio.obtUsuario(id);
+  }
 
-    @Get('estilistas')
-    async obtTodosLosEstilistas() {
-        return this.usuarioServicio.obtTodosLosEstilistas();
-    }
+  // =========================================================================
+  // 2. CREACIÓN (POST)
+  // =========================================================================
 
-    @Get('recepcionistas')
-    async obtTodosLosRecepcionistas() {
-        return this.usuarioServicio.obtTodosLosRecepcionistas();
-    }
+  @Post()
+  async inserta(@Body() createUserDto: CreateUserDto) {
+    return this.usuarioServicio.inserta(createUserDto);
+  }
 
-    // =========================================================================
-    // 2. RUTAS PROTEGIDAS CON JWT
-    // =========================================================================
-    @UseGuards(JwtAuthGuard)    
-    @Get('empleados')
-    async obtenerTodosLosEmpleados() {
-        return this.usuarioServicio.obtenerTodosLosEmpleados();
-    }
+  // =========================================================================
+  // 3. ACTUALIZACIÓN (PUT)
+  // =========================================================================
 
-    @UseGuards(JwtAuthGuard)
-@Get('con-tratamientos')
-async obtenerCitasConTratamientos() {
-    return this.usuarioServicio.obtenerCitasConTratamientos();
-}
+  @UseGuards(JwtAuthGuard)
+  @Put(':id')
+  async actualizar(
+    @Param('id') id: string,
+    @Body() updateUserDto: UpdateUserDto,
+  ) {
+    return this.usuarioServicio.actualizar(id, updateUserDto);
+  }
 
-@UseGuards(JwtAuthGuard)
-@Get('mis-pacientes/:idVeterinario')
-async obtenerMisPacientes(@Param('idVeterinario') idVeterinario: string) {
-  return this.usuarioServicio.obtenerPacientesPorVeterinario(Number(idVeterinario));
-}
+  // =========================================================================
+  // 4. ELIMINACIÓN (DELETE)
+  // =========================================================================
 
-    // =========================================================================
-    // 3. RUTAS CON PARÁMETROS ESPECÍFICOS
-    // =========================================================================
-    @Get('clientes/:id')
-    async obtClientePorId(@Param('id', ParseIntPipe) id: number) {
-        return this.usuarioServicio.obtClientePorId(id);
-    }
-
-    // =========================================================================
-    // 4. RUTAS GENÉRICAS / CAJÓN DE SASTRE (Siempre al final)
-    // =========================================================================
-    
-    // El Get base se movió aquí abajo para que no se coma a 'empleados'
-    @Get()
-    async obtTodo(){
-        return this.usuarioServicio.obtTodo();
-    }
-
-    @Get(':id')
-    async obtUsuario(@Param('id', ParseIntPipe) id: number){
-        return this.usuarioServicio.obtUsuario(id);
-    }
-
-    // =========================================================================
-    // 5. MÉTODOS POST
-    // =========================================================================
-    @Post()
-    async inserta(@Body() nuevo: any){
-        return this.usuarioServicio.inserta(nuevo);
-    }
-
-    @Post('login')
-    async login(@Body() credenciales: any) {
-        return this.usuarioServicio.login(credenciales);
-    }
-        
-    @Post('recuperar-password')
-    async solicitarRecuperacion(@Body('correo') correo: string) {
-        return this.usuarioServicio.solicitarRecuperacion(correo);
-    }
-
-    @Post('reset-password')
-    async restablecerContrasenia(@Body('token') token: string, @Body('contrasenia') contrasenia: string) {
-        return this.usuarioServicio.restablecerContrasenia(token, contrasenia);
-    }
+  @UseGuards(JwtAuthGuard)
+  @Delete(':id')
+  async eliminar(@Param('id') id: string) {
+    return this.usuarioServicio.eliminar(id);
+  }
 }
