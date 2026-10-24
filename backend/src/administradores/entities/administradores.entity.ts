@@ -1,10 +1,10 @@
 import { Entity, PrimaryColumn, Column, OneToOne, JoinColumn } from 'typeorm';
-import { Usuario } from 'src/usuarios/entities/usuario.entity';
+import { Usuario } from '../../usuarios/entities/usuario.entity';
 
 @Entity({ name: 'administradores' }) 
 export class Administradores {
   @PrimaryColumn({ type: 'bigint', name: 'id_usuario' })
-  id_usuario: number = 0;
+  id_usuario!: string;
 
   @Column({ type: 'text', name: 'nvl_acceso', nullable: true })
   nvl_acceso: string = "";

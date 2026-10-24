@@ -1,6 +1,6 @@
 import { Entity, PrimaryColumn, Column, OneToOne, JoinColumn } from 'typeorm';
-import { Usuario } from 'src/usuarios/entities/usuario.entity';
-@Entity({ name: 'nombre_de_tu_tabla' }) // Reemplaza por el nombre real de esta tabla
+import { Usuario } from '../../usuarios/entities/usuario.entity';
+@Entity({ name: 'recepcionistas' })
 export class Recepcionista {
   @PrimaryColumn({ type: 'bigint', name: 'id_usuario' })
   id_usuario!: string; // int8 PRIMARY FOREIGN KEY NON-NULLABLE[cite: 8]

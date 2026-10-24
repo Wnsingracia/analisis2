@@ -1,5 +1,5 @@
 import { Entity, PrimaryGeneratedColumn, PrimaryColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Cliente } from 'src/clientes/entities/clientes.entity';
+import { Cliente } from '../../clientes/entities/clientes.entity';
 
 @Entity({ name: 'mascotas' })
 export class Mascota {

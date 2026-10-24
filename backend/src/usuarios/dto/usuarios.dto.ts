@@ -16,7 +16,8 @@ export const TIPOS_USUARIO = [
   'ESTILISTA',
 ] as const;
 
-export class CreateUserDto {
+// Datos comunes a cualquier usuario (sin el rol). Los DTO de clientes, veterinarios, etc. lo extienden.
+export class DatosPersonalesDto {
   @IsOptional()
   @IsString({ message: 'Los nombres deben ser texto' })
   @Length(2, 100, { message: 'Los nombres deben tener entre 2 y 100 caracteres' })
@@ -49,6 +50,9 @@ export class CreateUserDto {
   @Length(6, 255, { message: 'La contraseña debe tener por lo menos 6 caracteres' })
   contrasenia!: string;
 
+}
+
+export class CreateUserDto extends DatosPersonalesDto {
   @IsIn(TIPOS_USUARIO, {
     message: `El tipo de usuario debe ser uno de: ${TIPOS_USUARIO.join(', ')}`,
   })
