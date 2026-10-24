@@ -53,7 +53,7 @@ export default function Register() {
 
     // 3. Petición HTTP al backend NestJS
     try {
-      const response = await api.post('/usuarios', datosParaBackend);
+      const response = await api.post('/auth/registro', datosParaBackend);
       
       // Si el backend responde con éxito
       alert(`${response.data.mensaje} - Tu ID asignado es: ${response.data.id_usuario}`);

@@ -54,7 +54,7 @@ export default function Staff() {
   const cargarEmpleados = async () => {
     setCargando(true);
     try {
-      const response = await api.get('/usuarios/empleados');
+      const response = await api.get('/empleados');
       setStaffList(response.data);
     } catch (error) {
       console.error("Error al recuperar el personal:", error);
@@ -124,11 +124,11 @@ export default function Staff() {
     try {
       if (isEditing) {
         // Enviar modificaciones al endpoint de NestJS (Ej: PUT /usuarios/empleados/:id)
-        await api.put(`/usuarios/empleados/${selectedStaffId}`, formData);
+        await api.put(`/empleados/${selectedStaffId}`, formData);
         alert("Datos del empleado actualizados con éxito.");
       } else {
         // Enviar nueva inserción por transacciones a Postgres
-        await api.post('/usuarios/inserta', formData);
+        await api.post('/usuarios', formData);
         alert(`Empleado [${formData.tipo_usuario}] registrado correctamente.`);
       }
       setIsFormModalOpen(false);
@@ -143,7 +143,7 @@ export default function Staff() {
   const confirmDelete = async () => {
     if (!selectedStaffId) return;
     try {
-      await api.delete(`/usuarios/empleados/${selectedStaffId}`);
+      await api.delete(`/usuarios/${selectedStaffId}`);
       alert("Registro eliminado de la base de datos.");
       setIsDeleteModalOpen(false);
       setSelectedStaffId(null);
