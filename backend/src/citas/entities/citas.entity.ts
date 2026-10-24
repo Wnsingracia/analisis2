@@ -1,7 +1,7 @@
 import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Cliente } from 'src/clientes/entities/clientes.entity';
-import { Mascota } from 'src/mascotas/entities/mascotas.entity';
-import { Recepcionista } from 'src/recepcionistas/entities/recepcionistas.entity'; // O la entidad correspondiente a recepcionista/empleado
+import { Cliente } from '../../clientes/entities/clientes.entity';
+import { Mascota } from '../../mascotas/entities/mascotas.entity';
+import { Recepcionista } from '../../recepcionistas/entities/recepcionistas.entity'; // O la entidad correspondiente a recepcionista/empleado
 
 @Entity({ name: 'citas' })
 export class Cita {
@@ -34,7 +34,7 @@ export class Cita {
 
   // Relaciones explícitas con las otras tablas
   @ManyToOne(() => Mascota, { nullable: true })
-  @JoinColumn({ name: 'id_mascota' })
+  @JoinColumn({ name: 'id_mascota', referencedColumnName: 'id_mascota' })
   mascota?: Mascota;
 
   @ManyToOne(() => Cliente, { nullable: true })

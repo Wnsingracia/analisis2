@@ -1,33 +1,34 @@
-import { IsNotEmpty, IsOptional, IsString, IsNumber } from 'class-validator';
+import { IsInt, IsOptional, IsString } from 'class-validator';
+import { DatosPersonalesDto } from '../../usuarios/dto/usuarios.dto';
 
-export class CreateEmpleadoDto {
-  @IsNotEmpty({ message: 'El id_usuario es obligatorio' })
-  @IsString({ message: 'El id_usuario debe ser una cadena válida' })
-  id_usuario!: string; //[cite: 5]
-
+// Un empleado no se crea solo: nace junto con su rol (veterinario, estilista o recepcionista).
+export class DatosEmpleadoDto {
   @IsOptional()
-  @IsNumber({}, { message: 'El salario debe ser un valor numérico válido' })
-  salario?: number; //[cite: 5]
+  @IsInt({ message: 'El salario debe ser un número entero' })
+  salario?: number;
 
   @IsOptional()
   @IsString({ message: 'La hora de ingreso debe ser texto' })
-  hora_ingreso?: string; //[cite: 5]
+  hora_ingreso?: string;
 
   @IsOptional()
   @IsString({ message: 'La hora de salida debe ser texto' })
-  hora_salida?: string; //[cite: 5]
+  hora_salida?: string;
 }
 
-export class UpdateEmpleadoDto {
+// Base de los DTO de creación de veterinarios, estilistas y recepcionistas
+export class DatosPersonalEmpleadoDto extends DatosPersonalesDto {
   @IsOptional()
-  @IsNumber({}, { message: 'El salario debe ser un valor numérico válido' })
-  salario?: number; //[cite: 5]
+  @IsInt({ message: 'El salario debe ser un número entero' })
+  salario?: number;
 
   @IsOptional()
   @IsString({ message: 'La hora de ingreso debe ser texto' })
-  hora_ingreso?: string; //[cite: 5]
+  hora_ingreso?: string;
 
   @IsOptional()
   @IsString({ message: 'La hora de salida debe ser texto' })
-  hora_salida?: string; //[cite: 5]
+  hora_salida?: string;
 }
+
+export class UpdateEmpleadoDto extends DatosEmpleadoDto {}

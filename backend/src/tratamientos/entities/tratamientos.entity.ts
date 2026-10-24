@@ -1,5 +1,5 @@
 import { Entity, PrimaryColumn, Column, ManyToOne, JoinColumn } from 'typeorm';
-import { Consulta } from 'src/consultas/entities/consultas.entity';
+import { Consulta } from '../../consultas/entities/consultas.entity';
 
 @Entity({ name: 'tratamientos' })
 export class Tratamiento {

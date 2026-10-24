@@ -17,7 +17,7 @@ const SALT_ROUNDS = 10;
 
 // Nunca incluir contrasenia, reset_token, reset_token_expira,
 // intentos_fallidos ni bloqueado_hasta
-const SELECT_PUBLICO: FindOptionsSelect<Usuario> = {
+export const SELECT_PUBLICO: FindOptionsSelect<Usuario> = {
   id_usuario: true,
   nombres: true,
   ap_pat: true,

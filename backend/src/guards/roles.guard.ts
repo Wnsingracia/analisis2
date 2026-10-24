@@ -18,9 +18,9 @@ export class RolesGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     );
 
-    // Sin @Roles(), basta con estar autenticado
+    // Denegar por defecto: toda ruta protegida debe declarar sus roles con @Roles()
     if (!rolesPermitidos || rolesPermitidos.length === 0) {
-      return true;
+      throw new ForbiddenException('Recurso sin roles asignados.');
     }
 
     const { user } = context.switchToHttp().getRequest();
