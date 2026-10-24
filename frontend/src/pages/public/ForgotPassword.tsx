@@ -15,7 +15,7 @@ export default function ForgotPassword() {
 
     try {
       // Enviamos el correo al endpoint de NestJS que configuramos con Resend
-      const res = await api.post('/usuarios/recuperar-password', { correo: email });
+      const res = await api.post('/auth/recuperar-password', { correo: email });
       alert(res.data.mensaje);
       setEmail(''); // Limpiamos el input
     } catch (error: any) {

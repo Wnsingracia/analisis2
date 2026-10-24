@@ -18,7 +18,7 @@ export default function Login() {
 
     try {
       // 1. Enviamos las credenciales al backend
-      const response = await api.post('/usuarios/login', {
+      const response = await api.post('/auth/login', {
         correo: email,
         contrasenia: password,
       });

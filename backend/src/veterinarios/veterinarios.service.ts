@@ -107,7 +107,7 @@ export class VeterinariosService {
                 MAX(cm.fecha) AS ultima_consulta
            FROM mascotas m
            JOIN usuarios u ON u.id_usuario = m.id_cliente
-           JOIN consultas_medicas cm
+           JOIN consultas cm
              ON cm."idMascota" = m.id_mascota AND cm.id_veterinario = $1
           GROUP BY m.id_mascota, m.nombre, m.tipo, m.raza, m.edad, m.genero,
                    u.nombres, u.ap_pat

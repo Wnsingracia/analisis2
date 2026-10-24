@@ -35,7 +35,7 @@ export default function MisPacientes() {
       }
       
       try {
-        const res = await api.get(`/usuarios/mis-pacientes/${idVeterinario}`);
+        const res = await api.get(`/veterinarios/${idVeterinario}/pacientes`);
         setPacientes(res.data);
       } catch (error: any) {
         console.error("Error al cargar pacientes:", error);

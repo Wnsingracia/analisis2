@@ -32,7 +32,7 @@ export default function ResetPassword() {
     setCargando(true);
     try {
       // Enviamos el token y la nueva contraseña al backend
-      const res = await api.post('/usuarios/reset-password', {
+      const res = await api.post('/auth/recuperar', {
         token: token,
         contrasenia: password
       });
