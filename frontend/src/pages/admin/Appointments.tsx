@@ -33,7 +33,7 @@ export default function Appointments() {
 
   const emptyForm = {
     fecha: '', hora: '', tipo: 'Consulta Médica', descripcion: '', costo: '', idMascota: '', idCliente: '', 
-    idRecepcionista: '700018' // ID de prueba basado en tus inserts
+    idRecepcionista: '700018'
   };
   
   const [formData, setFormData] = useState<any>(emptyForm);
@@ -42,7 +42,7 @@ export default function Appointments() {
   const cargarCitas = async () => {
     setCargando(true);
     try {
-      const res = await api.get('/usuarios/con-tratamientos');
+      const res = await api.get('/citas');
       setAppointments(res.data);
     } catch (error) {
       console.error(error);

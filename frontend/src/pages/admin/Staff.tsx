@@ -98,7 +98,7 @@ export default function Staff() {
       cel: staff.cel,
       correo: staff.correo,
       genero: staff.genero,
-      contrasenia: '', // No enviamos contraseña al editar por seguridad
+      contrasenia: '', 
       salario: staff.salario.toString(),
       hora_ingreso: staff.hora_ingreso,
       hora_salida: staff.hora_salida,
@@ -139,7 +139,6 @@ export default function Staff() {
     }
   };
 
-  // ================= ELIMINACIÓN REAL (DELETE) =================
   const confirmDelete = async () => {
     if (!selectedStaffId) return;
     try {
