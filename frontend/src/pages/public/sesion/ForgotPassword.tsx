@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { InputField } from '../../components/ui/InputField';
-import { Button } from '../../components/ui/Button';
-import api from '../../services/api';
-import logoVetCare2 from '../../assets/logo-VetCare2.jpeg';
+import { InputField } from '../../../components/ui/InputField';
+import { Button } from '../../../components/ui/Button';
+import api from '../../../services/api';
+import logoVetCare2 from '../../../assets/logo-VetCare2.jpeg';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -15,7 +15,7 @@ export default function ForgotPassword() {
 
     try {
       // Enviamos el correo al endpoint de NestJS que configuramos con Resend
-      const res = await api.post('/auth/recuperar-password', { correo: email });
+      const res = await api.post('/auth/recuperar', { correo: email });
       alert(res.data.mensaje);
       setEmail(''); // Limpiamos el input
     } catch (error: any) {

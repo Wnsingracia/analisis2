@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
-import { InputField } from '../../components/ui/InputField';
-import { Button } from '../../components/ui/Button';
-import api from '../../services/api';
-import logoVetCare2 from '../../assets/logo-VetCare2.jpeg';
+import { InputField } from '../../../components/ui/InputField';
+import { Button } from '../../../components/ui/Button';
+import api from '../../../services/api';
+import logoVetCare2 from '../../../assets/logo-VetCare2.jpeg';
 
 export default function ResetPassword() {
   const [searchParams] = useSearchParams();

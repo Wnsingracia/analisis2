@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../../components/ui/Button';
-import logoVetCare2 from '../../assets/logo-VetCare2.jpeg';
+import { Button } from '../../../components/ui/Button';
+import logoVetCare2 from '../../../assets/logo-VetCare2.jpeg';
 
 interface RecepcionistaData {
   id: number;

@@ -1,10 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom'; 
-import { Button } from '../../components/ui/Button';
-import { InputField } from '../../components/ui/InputField';
-import api from '../../services/api'; 
+import { Button } from '../../../components/ui/Button';
+import { InputField } from '../../../components/ui/InputField';
+import api from '../../../services/api'; 
 
-import logoVetCare2 from '../../assets/logo-VetCare2.jpeg';
+import logoVetCare2 from '../../../assets/logo-VetCare2.jpeg';
 
 export default function Login() {
   const navigate = useNavigate(); 

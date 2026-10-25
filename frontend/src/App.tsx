@@ -1,22 +1,32 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Home from './pages/public/Home';
-import Login from './pages/public/Login';
-import Register from './pages/public/Register';
+import Login from './pages/public/sesion/Login';
+import Register from './pages/public/sesion/Register';
+import ForgotPassword from './pages/public/sesion/ForgotPassword';
+import ResetPassword from './pages/public/sesion/ResetPassword';
+
+//IMPORTS DE LAS PÚBLICAS NUEVAS (Servicios, Nosotros, Citas, etc.)
+import Servicios from './pages/public/Servicios';
+import Nosotros from './pages/public/Nosotros';
+import Citas from './pages/public/Citas';
+import Privacidad from './pages/public/Privacidad';
+import Terminos from './pages/public/Terminos';
+import Contacto from './pages/public/Contacto';
+
+// Layout de Admin y vistas de Admin
 import { AdminLayout } from './components/layout/AdminLayout'; 
 import Dashboard from './pages/admin/Dashboard';
 import Staff from './pages/admin/Staff';
 import Clients from './pages/admin/Clientes'; 
 import Inventory from './pages/admin/Inventory';
 import Appointments from './pages/admin/Appointments';
-import ForgotPassword from './pages/public/ForgotPassword';
-import ResetPassword from './pages/public/ResetPassword';
-
-// 1. IMPORTS DE TODOS LOS ROLES DE VETCARE
-import ClientDashboard from './pages/public/ClientDashBoard';
-import VeterinarioDashboard from './pages/public/VeterinarioDashBoard';
-import EstilistaDashboard from './pages/public/EstilistaDashBoard';
-import RecepcionistaDashboard from './pages/public/RecepcionistaDashBoard';
 import ClinicalHistory from './pages/admin/ClinicalHistory';
+
+// Dashboards por rol y otros
+import ClientDashboard from './pages/public/dashboard/ClientDashBoard';
+import VeterinarioDashboard from './pages/public/dashboard/VeterinarioDashBoard';
+import EstilistaDashboard from './pages/public/dashboard/EstilistaDashBoard';
+import RecepcionistaDashboard from './pages/public/dashboard/RecepcionistaDashBoard';
 import MisPacientes from './pages/public/MisPacientes';
 
 function App() {
@@ -24,9 +34,19 @@ function App() {
     <Router>
       <Routes>
         {/* ==========================================
-            VISTAS PÚBLICAS
+            VISTAS PÚBLICAS (Incluyendo Servicios, Nosotros y Citas)
            ========================================== */}
         <Route path="/" element={<Home />} />
+        <Route path="/servicios" element={<Servicios />} />
+        <Route path="/nosotros" element={<Nosotros />} />
+        <Route path="/citas" element={<Citas />} />
+        
+        {/* Rutas del footer */}
+        <Route path="/privacidad" element={<Privacidad />} />
+        <Route path="/terminos" element={<Terminos />} />
+        <Route path="/contacto" element={<Contacto />} />
+
+        {/* Rutas de autenticación */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />

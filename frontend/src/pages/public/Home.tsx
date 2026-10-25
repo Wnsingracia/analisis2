@@ -8,11 +8,29 @@ const TopNavBar = () => {
         <span className="material-symbols-outlined text-primary text-3xl icon-fill">pets</span>
         <span className="font-display text-2xl font-bold text-primary">VetCare</span>
       </div>
+      
+      {/* Enlaces de navegación actualizados con <Link> */}
       <div className="hidden md:flex gap-8 items-center">
-        <a className="font-body text-sm font-semibold text-secondary border-b-2 border-secondary pb-1 hover:scale-105 transition-transform duration-200" href="#">Servicios</a>
-        <a className="font-body text-sm font-semibold text-on-surface-variant hover:text-primary hover:scale-105 transition-transform duration-200" href="#">Nosotros</a>
-        <a className="font-body text-sm font-semibold text-on-surface-variant hover:text-primary hover:scale-105 transition-transform duration-200" href="#">Citas</a>
+        <Link 
+          to="/servicios" 
+          className="font-body text-sm font-semibold text-secondary border-b-2 border-secondary pb-1 hover:scale-105 transition-transform duration-200"
+        >
+          Servicios
+        </Link>
+        <Link 
+          to="/nosotros" 
+          className="font-body text-sm font-semibold text-on-surface-variant hover:text-primary hover:scale-105 transition-transform duration-200"
+        >
+          Nosotros
+        </Link>
+        <Link 
+          to="/Login" 
+          className="font-body text-sm font-semibold text-on-surface-variant hover:text-primary hover:scale-105 transition-transform duration-200"
+        >
+          Citas
+        </Link>
       </div>
+
       {/* Conexión de ruta directa al Login */}
       <Link to="/login">
         <Button variant="secondary">Login</Button>
@@ -21,13 +39,9 @@ const TopNavBar = () => {
   );
 };
 
-// ... El resto del componente HeroSection usa <Button variant="primary" icon="calendar_month">Reservar Cita</Button> y <Button variant="outline">Nuestros Servicios</Button>
-
 const HeroSection = () => {
   return (
-    // Sección expandida al 100% del ancho
     <section className="relative w-full px-6 lg:px-20 py-16 lg:py-24">
-      {/* Se usa lg:grid-cols-2 para evitar que se aplaste en laptops pequeñas */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-16 items-center">
         
         {/* Text Content */}
@@ -40,19 +54,26 @@ const HeroSection = () => {
             Cuidado experto para tus <span className="text-primary">mejores amigos</span>
           </h1>
           
-          {/* Párrafo sin restricción de max-width, usando pr-12 para dejar espacio de respiro */}
           <p className="font-body text-[18px] lg:text-[20px] leading-relaxed text-on-surface-variant mb-10 w-full lg:pr-12">
             Servicios médicos veterinarios y spa de lujo para mascotas en un solo lugar. Brindamos amor, salud y relajación para quienes más lo merecen.
           </p>
           
+          {/* Botones del Hero convertidos en <Link> con los mismos estilos */}
           <div className="flex flex-col sm:flex-row gap-4">
-            <button className="bg-secondary-container text-white font-body text-sm font-semibold px-8 py-3.5 rounded-full shadow-ambient hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2">
+            <Link 
+              to="/Login" 
+              className="bg-secondary-container text-white font-body text-sm font-semibold px-8 py-3.5 rounded-full shadow-ambient hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-2"
+            >
               <span>Reservar Cita</span>
               <span className="material-symbols-outlined text-[20px]">calendar_month</span>
-            </button>
-            <button className="bg-surface text-primary border border-outline-variant font-body text-sm font-semibold px-8 py-3.5 rounded-full hover:bg-surface-variant transition-colors flex items-center justify-center gap-2">
+            </Link>
+            
+            <Link 
+              to="/servicios" 
+              className="bg-surface text-primary border border-outline-variant font-body text-sm font-semibold px-8 py-3.5 rounded-full hover:bg-surface-variant transition-colors flex items-center justify-center gap-2"
+            >
               <span>Nuestros Servicios</span>
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -88,11 +109,20 @@ const Footer = () => {
         <span className="material-symbols-outlined text-primary text-2xl icon-fill">pets</span>
         <span className="font-display text-xl font-bold text-primary">VetCare Animal Center</span>
       </div>
+      
+      {/* Enlaces del footer actualizados a rutas reales */}
       <div className="flex flex-wrap justify-center gap-6 mb-6 md:mb-0">
-        <a className="font-body text-sm text-on-surface-variant hover:text-primary hover:underline decoration-secondary decoration-2 transition-colors" href="#">Política de Privacidad</a>
-        <a className="font-body text-sm text-on-surface-variant hover:text-primary hover:underline decoration-secondary decoration-2 transition-colors" href="#">Términos de Servicio</a>
-        <a className="font-body text-sm text-on-surface-variant hover:text-primary hover:underline decoration-secondary decoration-2 transition-colors" href="#">Contacto</a>
+        <Link to="/privacidad" className="font-body text-sm text-on-surface-variant hover:text-primary hover:underline decoration-secondary decoration-2 transition-colors">
+          Política de Privacidad
+        </Link>
+        <Link to="/terminos" className="font-body text-sm text-on-surface-variant hover:text-primary hover:underline decoration-secondary decoration-2 transition-colors">
+          Términos de Servicio
+        </Link>
+        <Link to="/contacto" className="font-body text-sm text-on-surface-variant hover:text-primary hover:underline decoration-secondary decoration-2 transition-colors">
+          Contacto
+        </Link>
       </div>
+
       <p className="font-body text-sm text-on-surface-variant text-center md:text-right">
         © 2026 VetCare Animal Center. Todos los derechos reservados.
       </p>
