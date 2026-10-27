@@ -19,6 +19,19 @@ interface CitaTratamiento {
   fecha_emision?: string;
 }
 
+interface Cliente {
+  id_usuario: string;
+  usuario?: { nombres: string; ap_pat: string; ap_mat?: string | null };
+}
+
+interface Mascota {
+  id_mascota: number;
+  nombre: string;
+  tipo?: string;
+  raza?: string;
+  id_cliente: number;
+}
+
 export default function Appointments() {
   // ================= ESTADOS REALES =================
   const [appointments, setAppointments] = useState<CitaTratamiento[]>([]);
@@ -31,10 +44,16 @@ export default function Appointments() {
   const [isEditing, setIsEditing] = useState(false);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
 
+  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [mascotas, setMascotas] = useState<Mascota[]>([]);
+  const [cargandoClientes, setCargandoClientes] = useState(false);
+  const [cargandoMascotas, setCargandoMascotas] = useState(false);
+  const [idRecepcionistaSesion, setIdRecepcionistaSesion] = useState('');
+
   const emptyForm = {
-    fecha: '', hora: '', tipo: 'Consulta Médica', descripcion: '', costo: '', idMascota: '', idCliente: '', 
-    idRecepcionista: '700018' // ID de prueba basado en tus inserts
-  };
+  fecha: '', hora: '', tipo: 'Consulta', descripcion: '',
+  costo: '', idMascota: '', idCliente: ''
+};
   
   const [formData, setFormData] = useState<any>(emptyForm);
 
@@ -42,17 +61,71 @@ export default function Appointments() {
   const cargarCitas = async () => {
     setCargando(true);
     try {
-      const res = await api.get('/usuarios/con-tratamientos');
+      const res = await api.get('/citas');
       setAppointments(res.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      alert("No se pudo sincronizar la agenda de citas.");
+      alert(error.response?.data?.message || "No se pudo sincronizar la agenda de citas.");
     } finally {
       setCargando(false);
     }
   };
+  const cargarClientes = async () => {
+    setCargandoClientes(true);
+
+    try {
+      const res = await api.get('/clientes');
+      setClientes(res.data);
+    } catch (error) {
+      console.error('Error cargando dueños:', error);
+      alert('No se pudo cargar la lista de dueños.');
+    } finally {
+      setCargandoClientes(false);
+    }
+  };
+
+  const cargarMascotas = async (idCliente: string) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      idCliente,
+      idMascota: ''
+    }));
+
+    setMascotas([]);
+
+    if (!idCliente) return;
+
+    setCargandoMascotas(true);
+
+    try {
+      const res = await api.get(
+        `/mascotas?id_cliente=${encodeURIComponent(idCliente)}`
+      );
+
+      setMascotas(res.data);
+    } catch (error) {
+      console.error('Error cargando mascotas:', error);
+      alert('No se pudieron cargar las mascotas del dueño.');
+    } finally {
+      setCargandoMascotas(false);
+    }
+  };
 
   useEffect(() => {
+    const sesion = localStorage.getItem('vetcare_sesion_recepcion');
+
+    if (sesion) {
+      try {
+        const datos = JSON.parse(sesion);
+
+        if (datos.tipo_usuario === 'RECEPCIONISTA') {
+          setIdRecepcionistaSesion(String(datos.id));
+        }
+      } catch (error) {
+        console.error('Error leyendo la sesión:', error);
+      }
+    }
+
     cargarCitas();
   }, []);
 
@@ -68,55 +141,114 @@ export default function Appointments() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const openCreateModal = () => { setFormData(emptyForm); setIsEditing(false); setIsFormModalOpen(true); };
-  
-  const openEditModal = (app: CitaTratamiento) => { 
-    setFormData({ 
-      fecha: app.fecha,
-      hora: app.hora,
-      tipo: app.tipo,
-      descripcion: app.cita_descripcion,
-      costo: app.costo.toString(),
-      idMascota: app.id_mascota.toString(),
-      idCliente: app.id_cliente.toString(),
-      idRecepcionista: app.id_recepcionista.toString()
-    }); 
+  const openCreateModal = async () => {
+    setFormData({
+      ...emptyForm,
+      idRecepcionista: idRecepcionistaSesion
+    });
+
+    setMascotas([]);
+    setSelectedAppointmentId(null);
+    setIsEditing(false);
+
+    await cargarClientes();
+    setIsFormModalOpen(true);
+  };
+
+ const openEditModal = async (app: CitaTratamiento) => {
     setSelectedAppointmentId(app.id_cita);
-    setIsEditing(true); 
-    setIsFormModalOpen(true); 
+    setIsEditing(true);
+
+    setFormData({
+      fecha: app.fecha ?? '',
+      hora: app.hora ?? '',
+      tipo: app.tipo ?? 'Consulta',
+      descripcion: app.cita_descripcion ?? '',
+      costo: app.costo != null ? String(app.costo) : '',
+      idMascota: app.id_mascota != null
+        ? String(app.id_mascota)
+        : '',
+      idCliente: app.id_cliente != null
+        ? String(app.id_cliente)
+        : '',
+      idRecepcionista: app.id_recepcionista != null
+        ? String(app.id_recepcionista)
+        : idRecepcionistaSesion
+    });
+
+    setMascotas([]);
+    setIsFormModalOpen(true);
+
+    try {
+      const resClientes = await api.get('/clientes');
+      setClientes(resClientes.data);
+
+      if (app.id_cliente) {
+        const resMascotas = await api.get(
+          `/mascotas?id_cliente=${encodeURIComponent(String(app.id_cliente))}`
+        );
+
+        setMascotas(resMascotas.data);
+      }
+    } catch (error) {
+      console.error('Error cargando los datos de la cita:', error);
+      alert('No se pudieron cargar los dueños o las mascotas.');
+    }
   };
   
   const openDeleteModal = (id: number) => { setSelectedAppointmentId(id); setIsDeleteModalOpen(true); };
 
-  const handleFormSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      if (isEditing) {
-        await api.put(`/usuarios/${selectedAppointmentId}`, formData);
-        alert("Cita reprogramada con éxito.");
-      } else {
-        await api.post('/usuarios', formData);
-        alert("Nueva cita reservada en la agenda.");
-      }
-      setIsFormModalOpen(false);
-      cargarCitas();
-    } catch (error: any) {
-      alert(error.response?.data?.message || "Error al procesar la cita.");
-    }
+  // Extrae un mensaje legible: Nest devuelve un array cuando falla la validación
+const mensaje = (error: any, porDefecto: string) => {
+  const m = error.response?.data?.message;
+  return Array.isArray(m) ? m.join('\n') : (m || porDefecto);
+};
+
+const handleFormSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+
+  if (!formData.idCliente || !formData.idMascota) {
+    alert('Selecciona un dueño y una mascota.');
+    return;
+  }
+
+  const datosCita = {
+    fecha: formData.fecha,
+    hora: formData.hora,
+    tipo: formData.tipo,
+    descripcion: formData.descripcion,
+    costo: Number(formData.costo),
+    id_cliente: formData.idCliente,   // string, sin Number()
+    id_mascota: formData.idMascota,   // string, sin Number()
   };
 
-  const confirmDelete = async () => {
-    if (!selectedAppointmentId) return;
-    try {
-      await api.delete(`/usuarios/${selectedAppointmentId}`);
-      alert("Cita cancelada y removida de la base de datos.");
-      setIsDeleteModalOpen(false);
-      setSelectedAppointmentId(null);
-      cargarCitas();
-    } catch (error: any) {
-      alert(error.response?.data?.message || "No se pudo remover la cita.");
+  try {
+    if (isEditing && selectedAppointmentId !== null) {
+      await api.put(`/citas/${selectedAppointmentId}`, datosCita);
+      alert('Cita reprogramada con éxito.');
+    } else {
+      await api.post('/citas', datosCita);
+      alert('Nueva cita reservada en la agenda.');
     }
-  };
+    setIsFormModalOpen(false);
+    await cargarCitas();
+  } catch (error: any) {
+    alert(mensaje(error, 'Error al procesar la cita.'));
+  }
+};
+
+const confirmDelete = async () => {
+  if (!selectedAppointmentId) return;
+  try {
+    await api.delete(`/citas/${selectedAppointmentId}`);
+    alert("Cita cancelada.");
+    setIsDeleteModalOpen(false);
+    setSelectedAppointmentId(null);
+    cargarCitas();
+  } catch (error: any) {
+    alert(mensaje(error, "No se pudo remover la cita."));
+  }
+};
 
   return (
     <div className="flex flex-col h-full relative">
@@ -235,9 +367,68 @@ export default function Appointments() {
               </select>
             </div>
 
-            <InputField label="Costo Estimado (Bs.):" icon="payments" type="number" step="0.01" name="costo" value={formData.costo} onChange={handleInputChange} required />
-            <InputField label="ID Cliente (Dueño):" icon="person" name="idCliente" value={formData.idCliente} onChange={handleInputChange} placeholder="ID del sistema" required />
-            <InputField label="ID Mascota (Paciente):" icon="pets" name="idMascota" value={formData.idMascota} onChange={handleInputChange} placeholder="ID del sistema" required />
+            <InputField label="Costo Estimado (Bs.):" icon="payments" type="number" step="1" name="costo" value={formData.costo} onChange={handleInputChange} required />
+            <div className="space-y-1.5">
+              <label className="block text-on-surface font-bold text-[15px] font-body">
+                Dueño de la mascota:
+              </label>
+
+              <select
+                name="idCliente"
+                value={formData.idCliente}
+                onChange={(e) => cargarMascotas(e.target.value)}
+                required
+                className="w-full p-3.5 border border-outline-variant rounded-lg bg-white text-sm focus:border-primary outline-none"
+              >
+                <option value="">
+                  {cargandoClientes
+                    ? 'Cargando dueños...'
+                    : 'Selecciona un dueño'}
+                </option>
+
+                {clientes.map((c) => (
+                  <option key={c.id_usuario} value={c.id_usuario}>
+                    {c.usuario?.nombres} {c.usuario?.ap_pat} {c.usuario?.ap_mat || ''} (ID: {c.id_usuario})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="block text-on-surface font-bold text-[15px] font-body">
+                Mascota:
+              </label>
+
+              <select
+                name="idMascota"
+                value={formData.idMascota}
+                onChange={handleInputChange}
+                required
+                disabled={!formData.idCliente || cargandoMascotas}
+                className="w-full p-3.5 border border-outline-variant rounded-lg bg-white text-sm focus:border-primary outline-none disabled:bg-gray-100"
+              >
+                <option value="">
+                  {!formData.idCliente
+                    ? 'Primero selecciona un dueño'
+                    : cargandoMascotas
+                      ? 'Cargando mascotas...'
+                      : mascotas.length === 0
+                        ? 'Este dueño no tiene mascotas registradas'
+                        : 'Selecciona una mascota'}
+                </option>
+
+                {mascotas.map((mascota) => (
+                  <option
+                    key={mascota.id_mascota}
+                    value={mascota.id_mascota}
+                  >
+                    {mascota.nombre}
+                    {mascota.especie ? ` - ${mascota.especie}` : ''}
+                    {' '} (ID: {mascota.id_mascota})
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div className="md:col-span-2 space-y-1.5">
               <label className="block text-on-surface font-bold text-[15px] font-body">Descripción / Motivo:</label>

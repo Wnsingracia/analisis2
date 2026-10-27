@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom'; // Agregamos useNavigate para redirigir
-import { Button } from '../../components/ui/Button';
-import { InputField } from '../../components/ui/InputField';
-import api from '../../services/api'; // ◄ Importa tu instancia de Axios
-import logoVetCare2 from '../../assets/logo-VetCare2.jpeg';
+import { Button } from '../../../components/ui/Button';
+import { InputField } from '../../../components/ui/InputField';
+import api from '../../../services/api'; // ◄ Importa tu instancia de Axios
+import logoVetCare2 from '../../../assets/logo-VetCare2.jpeg';
 
 export default function Register() {
   const navigate = useNavigate(); // Para mandar al login tras registrarse

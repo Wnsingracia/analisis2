@@ -26,8 +26,9 @@ export class EmpleadosController {
   @Roles('ADMIN')
   @Get()
   listar() {
-    return this.servicio.listar();
+    return this.servicio.listarConUsuarios();
   }
+
 
   // Cada empleado puede ver sus propios datos laborales
   @Roles('ADMIN', 'VETERINARIO', 'ESTILISTA', 'RECEPCIONISTA')

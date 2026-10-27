@@ -12,6 +12,7 @@ import { SELECT_PUBLICO, UsuariosService } from '../usuarios/usuarios.service';
 import { DatosEmpleadoDto, UpdateEmpleadoDto } from './dto/empleado.dto';
 import { DatosPersonalesDto } from '../usuarios/dto/usuarios.dto';
 import { lanzarErrorDb, sinUndefined } from '../common/db';
+import { InternalServerErrorException } from '@nestjs/common';
 
 export type TipoPersonal = 'VETERINARIO' | 'ESTILISTA' | 'RECEPCIONISTA';
 
@@ -69,6 +70,27 @@ export class EmpleadosService {
       select: SELECT_EMPLEADO,
       order: { id_usuario: 'ASC' },
     });
+  }
+
+  async listarConUsuarios() {
+    try {
+      return await this.repo
+        .createQueryBuilder('e')
+        .innerJoin(Usuario, 'u', 'u.id_usuario = e.id_usuario')
+        .select([
+          'e.id_usuario AS id_usuario',
+          'u.nombres AS nombres',
+          'u.ap_pat AS ap_pat',
+          'u.ap_mat AS ap_mat',
+          'u.correo AS correo',
+          'u.tipo_usuario AS tipo_usuario',
+        ])
+        .orderBy('e.id_usuario', 'ASC')
+        .getRawMany();
+    } catch (error: any) {
+      this.logger.error('Error al listar empleados con usuarios', error?.stack ?? error);
+      throw new InternalServerErrorException('Error al obtener la lista de empleados.');
+    }
   }
 
   async obtener(id: string) {
