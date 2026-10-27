@@ -56,8 +56,8 @@ export class CitasService {
 
     const joinConsulta =
       rol === 'VETERINARIO'
-        ? 'LEFT JOIN consultas_medicas cm ON c.id_cita = cm.id_cita AND cm.id_veterinario = $1'
-        : 'LEFT JOIN consultas_medicas cm ON c.id_cita = cm.id_cita';
+        ? 'LEFT JOIN consultas cm ON c.id_cita = cm.id_cita AND cm.id_veterinario = $1'
+        : 'LEFT JOIN consultas cm ON c.id_cita = cm.id_cita';
     const filtro = rol === 'CLIENTE' ? 'WHERE c.id_cliente = $1' : '';
     const params = rol === 'ADMIN' ? [] : [id];
 

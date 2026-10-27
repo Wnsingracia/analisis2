@@ -65,8 +65,30 @@ export default function RecepcionistaDashboard() {
           <div className="bg-white p-6 rounded-2xl border border-outline-variant/40 shadow-sm col-span-2">
             <h3 className="font-display font-bold text-primary mb-4">Operaciones de Recepción</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="p-3 bg-surface-container rounded-xl cursor-pointer hover:bg-primary-container/20 transition-colors">
-                <p className="font-display font-bold text-xs text-primary">🗓️ Registrar Entrada / Nueva Cita</p>
+            <div
+              onClick={() => navigate('/recepcionista/appointments')}
+              role="button"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  navigate('/recepcionista/appointments');
+                }
+              }}
+              className="p-4 bg-surface-container rounded-xl cursor-pointer hover:bg-primary-container/20 transition-colors border border-transparent hover:border-primary/20"
+            >
+                <div className="flex items-center gap-3">
+                  <span className="material-symbols-outlined text-primary text-2xl">
+                    calendar_add_on
+                  </span>
+                  <div>
+                    <p className="font-display font-bold text-sm text-primary">
+                      Registrar Nueva Cita
+                    </p>
+                    <p className="font-body text-xs text-on-surface-variant mt-1">
+                      Agendar consultas, cirugías y servicios de estética.
+                    </p>
+                  </div>
+                </div>
               </div>
               <div className="p-3 bg-surface-container rounded-xl cursor-pointer hover:bg-primary-container/20 transition-colors">
                 <p className="font-display font-bold text-xs text-primary">💵 Control de Caja Rápida</p>

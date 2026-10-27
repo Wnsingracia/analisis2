@@ -15,6 +15,7 @@ import Contacto from './pages/public/Contacto';
 
 // Layout de Admin y vistas de Admin
 import { AdminLayout } from './components/layout/AdminLayout'; 
+import { RecepcionistaLayout } from './components/layout/RecepcionistaLayout'; 
 import Dashboard from './pages/admin/Dashboard';
 import Staff from './pages/admin/Staff';
 import Clients from './pages/admin/Clientes'; 
@@ -28,6 +29,7 @@ import VeterinarioDashboard from './pages/public/dashboard/VeterinarioDashBoard'
 import EstilistaDashboard from './pages/public/dashboard/EstilistaDashBoard';
 import RecepcionistaDashboard from './pages/public/dashboard/RecepcionistaDashBoard';
 import MisPacientes from './pages/public/MisPacientes';
+
 
 function App() {
   return (
@@ -60,7 +62,8 @@ function App() {
         <Route path="/dashboard-estilista" element={<EstilistaDashboard />} />
         <Route path="/dashboard-recepcionista" element={<RecepcionistaDashboard />} />
         <Route path="/vet/mis-pacientes" element={<MisPacientes />} />
-        
+
+
         {/* ==========================================
             ENTORNO PRIVADO DEL ADMINISTRADOR (CON LAYOUT)
            ========================================== */}
@@ -71,6 +74,12 @@ function App() {
           <Route path="inventory" element={<Inventory />} />
           <Route path="appointments" element={<Appointments />} />
           <Route path="clinical-history/:idMascota" element={<ClinicalHistory />} />
+        </Route>
+
+        <Route path="/recepcionista" element={<RecepcionistaLayout />}>
+        <Route path="dashboard" element={<RecepcionistaDashboard />}/>
+        <Route path="appointments" element={<Appointments />}/>
+        <Route path="inventory" element={<Inventory />}/>
         </Route>
       </Routes>
     </Router>
