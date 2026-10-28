@@ -22,6 +22,9 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({ onOpenGlobalAppointment 
             <p className="font-body text-xs font-semibold text-on-surface-variant">Paws & Palms</p>
           </div>
         </div>
+        
+
+        
       </div>
 
       <div className="flex-1 overflow-y-auto px-2">

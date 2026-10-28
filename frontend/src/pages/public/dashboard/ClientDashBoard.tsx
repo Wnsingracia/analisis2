@@ -2,40 +2,47 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
 import logoVetCare2 from '../../../assets/logo-VetCare2.jpeg';
+import api from '../../../services/api';
+import { useAuth } from '../../../context/AuthContext';
 
-interface ClienteData {
-  id: number;
-  nombres: string;
-  ap_pat: string;
-  correo: string;
-  nro_cuenta?: string; // El signo ? significa que es opcional
+// Datos del cliente que el login no devuelve (vienen de GET /clientes/:id)
+interface PerfilCliente {
+  nro_cuenta?: string | null;
+  usuario?: { correo?: string };
 }
 
 export default function ClientDashboard() {
   const navigate = useNavigate();
-  const [cliente, setCliente] = useState<ClienteData | null>(null);
+  const { usuario, cargando, cerrarSesion } = useAuth();
+  const [perfil, setPerfil] = useState<PerfilCliente>({});
+
+  // Al refrescar la página, AuthProvider tarda un instante en consultar /auth/me.
+  // Hay que esperar a que termine: si no, se redirigiría al login por error.
+  useEffect(() => {
+    if (cargando) return;
+    if (!usuario || usuario.tipo_usuario !== 'CLIENTE') {
+      navigate('/login', { replace: true });
+    }
+  }, [cargando, usuario, navigate]);
 
   useEffect(() => {
-    // 1. Recuperamos los datos del cliente guardados en el inicio de sesión
-    const sesionGuardada = localStorage.getItem('vetcare_sesion');
-    
-    if (!sesionGuardada) {
-      // Si no hay sesión, lo mandamos de patitas a la calle (al login)
-      alert("No tienes permiso de estar aquí. Por favor inicia sesión.");
-      navigate('/login');
-      return;
+    if (!usuario || usuario.tipo_usuario !== 'CLIENTE') return;
+    api
+      .get(`/clientes/${usuario.id_usuario}`)
+      .then((r) => setPerfil(r.data))
+      .catch(() => setPerfil({})); // si falla, se muestra lo básico
+  }, [usuario]);
+
+  const handleCerrarSesion = async () => {
+    try {
+      await cerrarSesion(); // borra la cookie en el servidor y limpia el estado
+    } catch {
+      /* aun si falla la petición, se sale de la pantalla */
     }
-
-    setCliente(JSON.parse(sesionGuardada));
-  }, [navigate]);
-
-  const handleCerrarSesion = () => {
-    localStorage.removeItem('vetcare_sesion'); // Limpiamos la memoria
     navigate('/login');
   };
 
-  // Mientras lee el localStorage, mostramos una pantalla de carga limpia
-  if (!cliente) {
+  if (cargando || !usuario) {
     return (
       <div className="min-h-screen w-full flex items-center justify-center bg-[#f8fbfa]">
         <p className="font-display text-primary font-bold animate-pulse">Cargando tu cuenta VetCare...</p>
@@ -72,7 +79,7 @@ export default function ClientDashboard() {
         {/* MENSAJE DE BIENVENIDA EXCLUSIVO PARA EL CLIENTE */}
         <header className="border-b border-outline-variant/20 pb-6 mb-8">
           <h1 className="font-display text-3xl sm:text-4xl font-bold text-primary tracking-wide">
-            ¡Bienvenido cliente, <span className="text-secondary">{cliente.nombres} {cliente.ap_pat}</span>! 👋
+            ¡Bienvenido cliente, <span className="text-secondary">{usuario.nombres} {usuario.ap_pat}</span>! 👋
           </h1>
           <p className="font-body text-sm text-on-surface-variant mt-2">
             Estamos listos para atender a tus consentidos hoy. Este es tu panel de control de VetCare.
@@ -87,9 +94,9 @@ export default function ClientDashboard() {
             <h3 className="font-display font-bold text-primary mb-3 flex items-center gap-2">
               <span className="material-icons text-sm">badge</span> Datos de Cuenta
             </h3>
-            <p className="font-body text-xs text-on-surface-variant">Código Cliente: <strong className="text-black">{cliente.id}</strong></p>
-            <p className="font-body text-xs text-on-surface-variant mt-1">Nro. de Cuenta Vet: <strong className="text-black">{cliente.nro_cuenta || 'No asignado'}</strong></p>
-            <p className="font-body text-xs text-on-surface-variant mt-1">Correo: <strong className="text-black">{cliente.correo}</strong></p>
+            <p className="font-body text-xs text-on-surface-variant">Código Cliente: <strong className="text-black">{usuario.id_usuario}</strong></p>
+            <p className="font-body text-xs text-on-surface-variant mt-1">Nro. de Cuenta Vet: <strong className="text-black">{perfil.nro_cuenta || 'No asignado'}</strong></p>
+            <p className="font-body text-xs text-on-surface-variant mt-1">Correo: <strong className="text-black">{perfil.usuario?.correo}</strong></p>
           </div>
 
           {/* Tarjeta 2: Atajos rápidos (Simulado) */}
@@ -99,10 +106,6 @@ export default function ClientDashboard() {
               <div className="p-3 bg-surface-container rounded-xl cursor-pointer hover:bg-primary-container/20 transition-colors">
                 <p className="font-display font-bold text-xs text-primary">🐾 Mis Mascotas</p>
                 <p className="text-[11px] text-on-surface-variant">Revisa el historial clínico de tus peluditos.</p>
-              </div>
-              <div className="p-3 bg-surface-container rounded-xl cursor-pointer hover:bg-primary-container/20 transition-colors">
-                <p className="font-display font-bold text-xs text-primary">📅 Reservar Cita</p>
-                <p className="text-[11px] text-on-surface-variant">Agenda un espacio para Spa o consulta médica.</p>
               </div>
             </div>
           </div>

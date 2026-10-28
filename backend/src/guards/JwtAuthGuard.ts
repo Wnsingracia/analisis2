@@ -21,15 +21,14 @@ export class JwtAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context
-      .switchToHttp()
-      .getRequest<Request & { user?: JwtPayload }>();
+    .switchToHttp()
+    .getRequest<Request & { user?: JwtPayload; cookies?: Record<string, string> }>();
 
-    const [tipo, token] = request.headers.authorization?.split(' ') ?? [];
+    const [tipo, bearer] = request.headers.authorization?.split(' ') ?? [];
+    const token = request.cookies?.vetcare_token ?? (tipo === 'Bearer' ? bearer : undefined);
 
-    if (tipo !== 'Bearer' || !token) {
-      throw new UnauthorizedException(
-        'Debes incluir un token JWT válido para acceder a este recurso.',
-      );
+    if (!token) {
+      throw new UnauthorizedException('Debes iniciar sesión para acceder a este recurso.');
     }
 
     try {

@@ -3,137 +3,134 @@ import { Button } from '../../components/ui/Button';
 import { InputField } from '../../components/ui/InputField';
 import { Modal } from '../../components/ui/Modal';
 import api from '../../services/api'; // ◄ Instancia de Axios con interceptor JWT
+import ClienteCombobox, { type ClienteOpcion } from '../../components/ui/ClienteComboBox.tsx'
+
 
 interface CitaTratamiento {
-  id_cita: number;
-  fecha: string;
-  hora: string;
-  tipo: string;
-  cita_descripcion: string;
-  costo: number;
-  id_mascota: number;
-  id_cliente: number;
-  id_recepcionista: number;
-  id_tratamiento?: number;
-  tratamiento_descripcion?: string;
-  fecha_emision?: string;
+  id_cita: string;
+  fecha: string | null;
+  hora: string | null;
+  tipo: string | null;
+  descripcion: string | null;
+  costo: string | number | null;
+  id_mascota: string | null;
+  id_cliente: string | null;
+  id_recepcionista: string | null;
+  // GET /citas no los devuelve (son datos clínicos); quedan opcionales para que la tabla compile
+  id_tratamiento?: string | null;
+  tratamiento_descripcion?: string | null;
+  fecha_emision?: string | null;
 }
 
-interface Cliente {
-  id_usuario: string;
-  usuario?: { nombres: string; ap_pat: string; ap_mat?: string | null };
-}
 
 interface Mascota {
-  id_mascota: number;
+  id_mascota: string;
   nombre: string;
   tipo?: string;
   raza?: string;
-  id_cliente: number;
+  id_cliente: string;
 }
 
+// Nest devuelve un array de mensajes cuando falla la validación
+const mensaje = (error: any, porDefecto: string) => {
+  const m = error.response?.data?.message;
+  return Array.isArray(m) ? m.join('\n') : (m || porDefecto);
+};
+// Fuera del componente
+const sinVacios = (obj: Record<string, any>) =>
+  Object.fromEntries(Object.entries(obj).filter(([, v]) => v !== ''));
+
+// Contraseña temporal aleatoria de 12 caracteres, sin letras ambiguas (0/O, 1/l/I)
+const generarClaveTemporal = () => {
+  const alfabeto = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+  const bytes = crypto.getRandomValues(new Uint32Array(12));
+  return Array.from(bytes, (b) => alfabeto[b % alfabeto.length]).join('');
+};
+
+const nuevoClienteVacio = {
+  nombres: '', ap_pat: '', ap_mat: '', cel: '', correo: '', contrasenia: '', direccion: '', nit: '',
+  mascotaNombre: '', mascotaTipo: '', mascotaRaza: ''
+};
+
 export default function Appointments() {
-  // ================= ESTADOS REALES =================
   const [appointments, setAppointments] = useState<CitaTratamiento[]>([]);
   const [cargando, setCargando] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  
-  // Modales
+
   const [isFormModalOpen, setIsFormModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState<number | null>(null);
+  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | null>(null);
 
-  const [clientes, setClientes] = useState<Cliente[]>([]);
+  const [clientes, setClientes] = useState<ClienteOpcion[]>([]);
   const [mascotas, setMascotas] = useState<Mascota[]>([]);
   const [cargandoClientes, setCargandoClientes] = useState(false);
   const [cargandoMascotas, setCargandoMascotas] = useState(false);
-  const [idRecepcionistaSesion, setIdRecepcionistaSesion] = useState('');
+  // Dentro del componente, junto a los demás useState
+const [nuevoClienteAbierto, setNuevoClienteAbierto] = useState(false);
+const [guardandoCliente, setGuardandoCliente] = useState(false);
+const [nuevoCliente, setNuevoCliente] = useState(nuevoClienteVacio);
 
   const emptyForm = {
-  fecha: '', hora: '', tipo: 'Consulta', descripcion: '',
-  costo: '', idMascota: '', idCliente: ''
-};
-  
+    fecha: '', hora: '', tipo: 'Consulta', descripcion: '',
+    costo: '', idMascota: '', idCliente: ''
+  };
   const [formData, setFormData] = useState<any>(emptyForm);
 
-  // ================= SYNC CON POSTGRES =================
+  // ================= CARGA DE DATOS =================
   const cargarCitas = async () => {
     setCargando(true);
     try {
-      const res = await api.get('/citas');
+      const res = await api.get('/citas/agenda');
       setAppointments(res.data);
     } catch (error: any) {
       console.error(error);
-      alert(error.response?.data?.message || "No se pudo sincronizar la agenda de citas.");
+      alert(mensaje(error, 'No se pudo sincronizar la agenda de citas.'));
     } finally {
       setCargando(false);
     }
   };
+
   const cargarClientes = async () => {
     setCargandoClientes(true);
-
     try {
       const res = await api.get('/clientes');
       setClientes(res.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error cargando dueños:', error);
-      alert('No se pudo cargar la lista de dueños.');
+      alert(mensaje(error, 'No se pudo cargar la lista de dueños.'));
     } finally {
       setCargandoClientes(false);
     }
   };
 
+  // Al elegir dueño: se limpia la mascota y se cargan solo las suyas
   const cargarMascotas = async (idCliente: string) => {
-    setFormData((prev: any) => ({
-      ...prev,
-      idCliente,
-      idMascota: ''
-    }));
-
+    setFormData((prev: any) => ({ ...prev, idCliente, idMascota: '' }));
     setMascotas([]);
-
     if (!idCliente) return;
 
     setCargandoMascotas(true);
-
     try {
-      const res = await api.get(
-        `/mascotas?id_cliente=${encodeURIComponent(idCliente)}`
-      );
-
+      const res = await api.get('/mascotas', { params: { id_cliente: idCliente } });
       setMascotas(res.data);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error cargando mascotas:', error);
-      alert('No se pudieron cargar las mascotas del dueño.');
+      alert(mensaje(error, 'No se pudieron cargar las mascotas del dueño.'));
     } finally {
       setCargandoMascotas(false);
     }
   };
 
   useEffect(() => {
-    const sesion = localStorage.getItem('vetcare_sesion_recepcion');
-
-    if (sesion) {
-      try {
-        const datos = JSON.parse(sesion);
-
-        if (datos.tipo_usuario === 'RECEPCIONISTA') {
-          setIdRecepcionistaSesion(String(datos.id));
-        }
-      } catch (error) {
-        console.error('Error leyendo la sesión:', error);
-      }
-    }
-
     cargarCitas();
   }, []);
 
-  // ================= FILTRADO REAL =================
-  const filteredAppointments = appointments.filter(app => 
-    app.cita_descripcion?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-    app.tipo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    app.tratamiento_descripcion?.toLowerCase().includes(searchTerm.toLowerCase())
+  // ================= FILTRADO =================
+  const term = searchTerm.toLowerCase();
+  const filteredAppointments = appointments.filter(app =>
+    app.descripcion?.toLowerCase().includes(term) ||
+    app.tipo?.toLowerCase().includes(term)
   );
 
   // ================= HANDLERS =================
@@ -141,114 +138,166 @@ export default function Appointments() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const openCreateModal = async () => {
-    setFormData({
-      ...emptyForm,
-      idRecepcionista: idRecepcionistaSesion
+    // Si el recepcionista ya había escrito algo en el buscador, se coloca en el campo que corresponda
+  const abrirNuevoCliente = (texto: string) => {
+    setNuevoCliente({
+      ...nuevoClienteVacio,
+      contrasenia: generarClaveTemporal(),
+      correo: texto.includes('@') ? texto : '',
+      cel: /^\d+$/.test(texto) ? texto : '',
+      nombres: texto && !texto.includes('@') && !/^\d+$/.test(texto) ? texto : '',
     });
+    setNuevoClienteAbierto(true);
+  };
 
+  const handleNuevoClienteChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    // El backend exige solo dígitos en celular y NIT
+    const soloDigitos = name === 'cel' || name === 'nit';
+    setNuevoCliente((prev) => ({ ...prev, [name]: soloDigitos ? value.replace(/\D/g, '') : value }));
+  };
+
+  const guardarNuevoCliente = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (guardandoCliente) return;
+    setGuardandoCliente(true);
+
+    // 1) Cliente (el backend crea usuario + cliente en una transacción)
+    let idNuevo = '';
+    try {
+      const { data } = await api.post('/clientes', sinVacios({
+        nombres: nuevoCliente.nombres.trim(),
+        ap_pat: nuevoCliente.ap_pat.trim(),
+        ap_mat: nuevoCliente.ap_mat.trim(),
+        cel: nuevoCliente.cel,
+        correo: nuevoCliente.correo.trim(),
+        contrasenia: nuevoCliente.contrasenia,
+        direccion: nuevoCliente.direccion.trim(),
+        nit: nuevoCliente.nit,
+      }));
+      idNuevo = String(data.id_usuario);
+    } catch (error: any) {
+      alert(mensaje(error, 'No se pudo registrar al cliente.'));
+      setGuardandoCliente(false);
+      return;
+    }
+
+    // 2) Primera mascota: sin ella no se puede agendar la cita
+    let idMascota = '';
+    try {
+      const { data } = await api.post('/mascotas', sinVacios({
+        id_cliente: idNuevo,
+        nombre: nuevoCliente.mascotaNombre.trim(),
+        tipo: nuevoCliente.mascotaTipo.trim(),
+        raza: nuevoCliente.mascotaRaza.trim(),
+      }));
+      idMascota = String(data.id_mascota);
+    } catch (error: any) {
+      alert(`Cliente registrado, pero no se pudo guardar la mascota:\n${mensaje(error, 'Error desconocido.')}`);
+    }
+
+    // 3) Refresca la lista y deja seleccionados al cliente y a su mascota
+    try {
+      await cargarClientes();
+      await cargarMascotas(idNuevo);
+      if (idMascota) setFormData((prev: any) => ({ ...prev, idMascota }));
+    } finally {
+      setNuevoClienteAbierto(false);
+      setGuardandoCliente(false);
+    }
+
+    alert(
+      `Cliente registrado.\nContraseña temporal: ${nuevoCliente.contrasenia}\n` +
+      'Entrégasela al cliente; no se vuelve a mostrar.'
+    );
+  };
+
+  const openCreateModal = async () => {
+    setFormData(emptyForm);
     setMascotas([]);
     setSelectedAppointmentId(null);
     setIsEditing(false);
-
     await cargarClientes();
     setIsFormModalOpen(true);
   };
 
- const openEditModal = async (app: CitaTratamiento) => {
+  const openEditModal = async (app: CitaTratamiento) => {
     setSelectedAppointmentId(app.id_cita);
     setIsEditing(true);
-
     setFormData({
       fecha: app.fecha ?? '',
       hora: app.hora ?? '',
       tipo: app.tipo ?? 'Consulta',
-      descripcion: app.cita_descripcion ?? '',
+      descripcion: app.descripcion ?? '',
       costo: app.costo != null ? String(app.costo) : '',
-      idMascota: app.id_mascota != null
-        ? String(app.id_mascota)
-        : '',
-      idCliente: app.id_cliente != null
-        ? String(app.id_cliente)
-        : '',
-      idRecepcionista: app.id_recepcionista != null
-        ? String(app.id_recepcionista)
-        : idRecepcionistaSesion
+      idMascota: app.id_mascota ?? '',
+      idCliente: app.id_cliente ?? ''
     });
-
     setMascotas([]);
     setIsFormModalOpen(true);
 
     try {
-      const resClientes = await api.get('/clientes');
-      setClientes(resClientes.data);
-
+      await cargarClientes();
       if (app.id_cliente) {
-        const resMascotas = await api.get(
-          `/mascotas?id_cliente=${encodeURIComponent(String(app.id_cliente))}`
-        );
-
-        setMascotas(resMascotas.data);
+        const res = await api.get('/mascotas', { params: { id_cliente: app.id_cliente } });
+        setMascotas(res.data);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error cargando los datos de la cita:', error);
-      alert('No se pudieron cargar los dueños o las mascotas.');
+      alert(mensaje(error, 'No se pudieron cargar los dueños o las mascotas.'));
     }
   };
-  
-  const openDeleteModal = (id: number) => { setSelectedAppointmentId(id); setIsDeleteModalOpen(true); };
 
-  // Extrae un mensaje legible: Nest devuelve un array cuando falla la validación
-const mensaje = (error: any, porDefecto: string) => {
-  const m = error.response?.data?.message;
-  return Array.isArray(m) ? m.join('\n') : (m || porDefecto);
-};
-
-const handleFormSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
-
-  if (!formData.idCliente || !formData.idMascota) {
-    alert('Selecciona un dueño y una mascota.');
-    return;
-  }
-
-  const datosCita = {
-    fecha: formData.fecha,
-    hora: formData.hora,
-    tipo: formData.tipo,
-    descripcion: formData.descripcion,
-    costo: Number(formData.costo),
-    id_cliente: formData.idCliente,   // string, sin Number()
-    id_mascota: formData.idMascota,   // string, sin Number()
+  const openDeleteModal = (id: string) => {
+    setSelectedAppointmentId(id);
+    setIsDeleteModalOpen(true);
   };
 
-  try {
-    if (isEditing && selectedAppointmentId !== null) {
-      await api.put(`/citas/${selectedAppointmentId}`, datosCita);
-      alert('Cita reprogramada con éxito.');
-    } else {
-      await api.post('/citas', datosCita);
-      alert('Nueva cita reservada en la agenda.');
-    }
-    setIsFormModalOpen(false);
-    await cargarCitas();
-  } catch (error: any) {
-    alert(mensaje(error, 'Error al procesar la cita.'));
-  }
-};
+  const handleFormSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-const confirmDelete = async () => {
-  if (!selectedAppointmentId) return;
-  try {
-    await api.delete(`/citas/${selectedAppointmentId}`);
-    alert("Cita cancelada.");
-    setIsDeleteModalOpen(false);
-    setSelectedAppointmentId(null);
-    cargarCitas();
-  } catch (error: any) {
-    alert(mensaje(error, "No se pudo remover la cita."));
-  }
-};
+    if (!formData.idCliente || !formData.idMascota) {
+      alert('Selecciona un dueño y una mascota.');
+      return;
+    }
+
+    const datosCita = {
+      fecha: formData.fecha,
+      hora: formData.hora,
+      tipo: formData.tipo,
+      descripcion: formData.descripcion,
+      costo: Number(formData.costo),
+      id_cliente: formData.idCliente,   // string, sin Number()
+      id_mascota: formData.idMascota,   // string, sin Number()
+    };
+
+    try {
+      if (isEditing && selectedAppointmentId !== null) {
+        await api.put(`/citas/${selectedAppointmentId}`, datosCita);
+        alert('Cita reprogramada con éxito.');
+      } else {
+        await api.post('/citas', datosCita);
+        alert('Nueva cita reservada en la agenda.');
+      }
+      setIsFormModalOpen(false);
+      await cargarCitas();
+    } catch (error: any) {
+      alert(mensaje(error, 'Error al procesar la cita.'));
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!selectedAppointmentId) return;
+    try {
+      await api.delete(`/citas/${selectedAppointmentId}`);
+      alert('Cita cancelada.');
+      setIsDeleteModalOpen(false);
+      setSelectedAppointmentId(null);
+      await cargarCitas();
+    } catch (error: any) {
+      alert(mensaje(error, 'No se pudo remover la cita.'));
+    }
+  };
 
   return (
     <div className="flex flex-col h-full relative">
@@ -304,7 +353,7 @@ const confirmDelete = async () => {
                             'bg-secondary-container/30 text-secondary border-secondary/20'}`}>
                           {app.tipo}
                         </span>
-                        <p className="font-body text-xs font-bold text-on-surface leading-relaxed">{app.cita_descripcion}</p>
+                        <p className="font-body text-xs font-bold text-on-surface leading-relaxed">{app.descripcion}</p>
                       </td>
                       
                       {/* 🐾 RENDERIZADO DEL TRATAMIENTO OBTENIDO VÍA LEFT JOIN */}
@@ -369,29 +418,14 @@ const confirmDelete = async () => {
 
             <InputField label="Costo Estimado (Bs.):" icon="payments" type="number" step="1" name="costo" value={formData.costo} onChange={handleInputChange} required />
             <div className="space-y-1.5">
-              <label className="block text-on-surface font-bold text-[15px] font-body">
-                Dueño de la mascota:
-              </label>
-
-              <select
-                name="idCliente"
+              <label className="block text-on-surface font-bold text-[15px] font-body">Dueño de la mascota:</label>
+              <ClienteCombobox
+                clientes={clientes}
                 value={formData.idCliente}
-                onChange={(e) => cargarMascotas(e.target.value)}
-                required
-                className="w-full p-3.5 border border-outline-variant rounded-lg bg-white text-sm focus:border-primary outline-none"
-              >
-                <option value="">
-                  {cargandoClientes
-                    ? 'Cargando dueños...'
-                    : 'Selecciona un dueño'}
-                </option>
-
-                {clientes.map((c) => (
-                  <option key={c.id_usuario} value={c.id_usuario}>
-                    {c.usuario?.nombres} {c.usuario?.ap_pat} {c.usuario?.ap_mat || ''} (ID: {c.id_usuario})
-                  </option>
-                ))}
-              </select>
+                onChange={cargarMascotas}
+                onNuevoCliente={abrirNuevoCliente}
+                cargando={cargandoClientes}
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -423,8 +457,8 @@ const confirmDelete = async () => {
                     value={mascota.id_mascota}
                   >
                     {mascota.nombre}
-                    {mascota.especie ? ` - ${mascota.especie}` : ''}
-                    {' '} (ID: {mascota.id_mascota})
+                    {mascota.tipo ? ` - ${mascota.tipo}` : ''}
+                    {' '}
                   </option>
                 ))}
               </select>
@@ -461,6 +495,47 @@ const confirmDelete = async () => {
             <Button variant="action" onClick={confirmDelete} className="bg-error border-error hover:bg-error/90 shadow-none px-6">Sí, Cancelar Cita</Button>
           </div>
         </div>
+      </Modal>
+
+      <Modal isOpen={nuevoClienteAbierto} onClose={() => setNuevoClienteAbierto(false)} title="Registrar nuevo cliente" maxWidth="max-w-3xl">
+        <form onSubmit={guardarNuevoCliente} className="space-y-6">
+          <div>
+            <h4 className="font-display text-lg font-bold text-primary mb-3 border-b border-outline-variant/30 pb-2">1. Datos del dueño</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <InputField label="Nombres:" icon="person" name="nombres" value={nuevoCliente.nombres} onChange={handleNuevoClienteChange} required />
+              <InputField label="Apellido paterno:" icon="badge" name="ap_pat" value={nuevoCliente.ap_pat} onChange={handleNuevoClienteChange} required />
+              <InputField label="Apellido materno:" icon="badge" name="ap_mat" value={nuevoCliente.ap_mat} onChange={handleNuevoClienteChange} />
+              <InputField label="Celular:" icon="phone" name="cel" value={nuevoCliente.cel} onChange={handleNuevoClienteChange} />
+              <InputField label="Correo:" icon="mail" type="email" name="correo" value={nuevoCliente.correo} onChange={handleNuevoClienteChange} required />
+              <InputField label="NIT / CI:" icon="receipt_long" name="nit" value={nuevoCliente.nit} onChange={handleNuevoClienteChange} />
+              <div className="md:col-span-2">
+                <InputField label="Dirección:" icon="home" name="direccion" value={nuevoCliente.direccion} onChange={handleNuevoClienteChange} />
+              </div>
+              <div className="md:col-span-2 flex items-end gap-3">
+                <div className="flex-1">
+                  <InputField label="Contraseña temporal:" icon="key" name="contrasenia" value={nuevoCliente.contrasenia} onChange={handleNuevoClienteChange} required />
+                </div>
+                <Button variant="outline" type="button" onClick={() => setNuevoCliente((p) => ({ ...p, contrasenia: generarClaveTemporal() }))}>
+                  Regenerar
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-display text-lg font-bold text-primary mb-3 border-b border-outline-variant/30 pb-2">2. Primera mascota</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <InputField label="Nombre:" icon="pets" name="mascotaNombre" value={nuevoCliente.mascotaNombre} onChange={handleNuevoClienteChange} required />
+              <InputField label="Tipo:" icon="category" name="mascotaTipo" value={nuevoCliente.mascotaTipo} onChange={handleNuevoClienteChange} placeholder="Perro, Gato..." required />
+              <InputField label="Raza:" icon="label" name="mascotaRaza" value={nuevoCliente.mascotaRaza} onChange={handleNuevoClienteChange} />
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/30">
+            <Button variant="outline" type="button" onClick={() => setNuevoClienteAbierto(false)}>Cancelar</Button>
+            <Button variant="primary" type="submit">{guardandoCliente ? 'Guardando...' : 'Registrar y seleccionar'}</Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

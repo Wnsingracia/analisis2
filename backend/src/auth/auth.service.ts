@@ -76,6 +76,7 @@ export class AuthService {
       }
     }
 
+    
     // 2. Validar contraseña
     const contraseniaEsValida = await bcrypt.compare(
       contrasenia,
@@ -132,6 +133,15 @@ export class AuthService {
   }
 
   // ---------- Recuperación de contraseña ----------
+
+  async perfil(idUsuario: string) {
+    const usuario = await this.usuarioRepo.findOne({
+      where: { id_usuario: idUsuario },
+      select: { id_usuario: true, nombres: true, ap_pat: true, tipo_usuario: true },
+    });
+    if (!usuario) throw new UnauthorizedException('Sesión inválida.');
+    return usuario;
+  }
 
   async solicitarRecuperacion(correo: string) {
     const respuestaGenerica = {

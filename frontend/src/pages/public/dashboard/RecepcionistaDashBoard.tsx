@@ -90,9 +90,7 @@ export default function RecepcionistaDashboard() {
                   </div>
                 </div>
               </div>
-              <div className="p-3 bg-surface-container rounded-xl cursor-pointer hover:bg-primary-container/20 transition-colors">
-                <p className="font-display font-bold text-xs text-primary">💵 Control de Caja Rápida</p>
-              </div>
+              
             </div>
           </div>
         </section>
