@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, FindOptionsSelect, Repository } from 'typeorm';
+import { DataSource, FindOptionsSelect, Repository, Not } from 'typeorm';
 import { Cliente } from './entities/clientes.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { SELECT_PUBLICO, UsuariosService } from '../usuarios/usuarios.service';
@@ -34,6 +34,8 @@ export class ClientesService {
 
   listar() {
     return this.repo.find({
+      // Las identidades revocadas (baja lógica) no aparecen en los listados
+      where: { usuario: { estado: Not('REVOCADA') } },
       relations: { usuario: true },
       select: SELECT_CLIENTE,
       order: { id_usuario: 'ASC' },
@@ -88,16 +90,13 @@ export class ClientesService {
   }
 
   async eliminar(id: string) {
-    try {
-      await this.dataSource.transaction(async (manager) => {
-        // Se borra primero la fila del rol: si no existe, el id no es de un cliente
-        const res = await manager.delete(Cliente, { id_usuario: id });
-        if (!res.affected) throw new NotFoundException('Cliente no encontrado.');
-        await manager.delete(Usuario, { id_usuario: id });
-      });
-      return { mensaje: 'Cliente eliminado.' };
-    } catch (error) {
-      lanzarErrorDb(error, this.logger, 'eliminar', 'el cliente');
-    }
+    // Baja lógica: la identidad pasa a REVOCADA y se conserva todo su historial
+    const registro = await this.repo.findOne({
+      where: { id_usuario: id },
+      select: { id_usuario: true },
+    });
+    if (!registro) throw new NotFoundException('Cliente no encontrado.');
+    await this.usuariosService.darDeBaja(id, 'CLIENTE');
+    return { mensaje: 'Cliente dado de baja. Su historial se conserva.' };
   }
 }

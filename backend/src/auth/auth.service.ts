@@ -13,6 +13,7 @@ import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import * as nodemailer from 'nodemailer';
 import { Usuario } from '../usuarios/entities/usuario.entity';
+import { AuditoriaService } from '../auditoria/auditoria.service';
 
 const MAX_INTENTOS_FALLIDOS = 5;
 const MINUTOS_BLOQUEO = 15;
@@ -29,6 +30,7 @@ export class AuthService {
     @InjectRepository(Usuario)
     private readonly usuarioRepo: Repository<Usuario>,
     private readonly jwtService: JwtService,
+    private readonly auditoria: AuditoriaService,
   ) {
     this.transporter = nodemailer.createTransport({
       host: 'smtp.resend.com',
@@ -104,6 +106,21 @@ export class AuthService {
         intentos_fallidos: intentos,
       });
       throw new UnauthorizedException('Correo o contraseña incorrectos');
+    }
+
+    // 2b. Credenciales correctas, pero la identidad está desactivada.
+    //     Se comprueba DESPUÉS de la contraseña para no revelar a un tercero
+    //     que la cuenta existe o su estado.
+    if (usuario.estado !== 'ACTIVA') {
+      await this.auditoria.registrar({
+        evento: 'LOGIN_RECHAZADO_IDENTIDAD_INACTIVA',
+        recurso: `usuarios/${usuario.id_usuario}`,
+        resultado: 'DENEGADO',
+        id_usuario: usuario.id_usuario,
+        rol: usuario.tipo_usuario,
+        detalle: { estado: usuario.estado },
+      });
+      throw new ForbiddenException('Tu cuenta no está activa. Contacta al administrador.');
     }
 
     // 3. Login correcto: limpiar contadores solo si hace falta

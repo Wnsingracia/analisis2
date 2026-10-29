@@ -59,4 +59,14 @@ export class Usuario {
 
   @Column({ type: 'timestamptz', name: 'fecha_creacion', nullable: true })
   fecha_creacion?: Date;
+
+  // Ciclo de vida de la identidad: ACTIVA, SUSPENDIDA o REVOCADA
+  @Column({ type: 'text', name: 'estado', default: 'ACTIVA' })
+  estado: string = 'ACTIVA';
+
+  @Column({ type: 'text', name: 'motivo_estado', nullable: true })
+  motivo_estado: string | null = null;
+
+  @Column({ type: 'timestamptz', name: 'fecha_estado', nullable: true })
+  fecha_estado: Date | null = null;
 }

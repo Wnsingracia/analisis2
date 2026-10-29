@@ -1,38 +1,54 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
+import { useAuth } from '../../../context/AuthContext';
+import api from '../../../services/api';
 import logoVetCare2 from '../../../assets/logo-VetCare2.jpeg';
 
-interface RecepcionistaData {
-  id: number;
-  nombres: string;
-  ap_pat: string;
-  correo: string;
-  tipo_usuario: string;
-  hora_ingreso: string;
-  hora_salida: string;
-  departamento: string;
+interface PerfilRecepcionista {
+  departamento?: string | null;
+  hora_ingreso?: string | null;
+  hora_salida?: string | null;
 }
 
 export default function RecepcionistaDashboard() {
   const navigate = useNavigate();
-  const [recepcionista, setRecepcionista] = useState<RecepcionistaData | null>(null);
+  // La sesión vive en AuthContext (cookie httpOnly validada por /auth/me), no en localStorage
+  const { usuario, cargando, cerrarSesion } = useAuth();
+  const [perfil, setPerfil] = useState<PerfilRecepcionista>({});
 
   useEffect(() => {
-    const sesion = localStorage.getItem('vetcare_sesion_recepcion');
-    if (!sesion) {
-      alert("Acceso denegado. Por favor inicia sesión.");
-      navigate('/login');
-      return;
+    if (cargando) return;
+    if (!usuario || usuario.tipo_usuario !== 'RECEPCIONISTA') {
+      navigate('/login', { replace: true });
     }
-    const datos = JSON.parse(sesion);
-    if (datos.tipo_usuario !== 'RECEPCIONISTA') {
-      alert("No tienes los permisos requeridos para este panel.");
-      navigate('/login');
-      return;
-    }
-    setRecepcionista(datos);
-  }, [navigate]);
+  }, [cargando, usuario, navigate]);
+
+  useEffect(() => {
+    if (!usuario || usuario.tipo_usuario !== 'RECEPCIONISTA') return;
+    Promise.all([
+      api.get(`/recepcionistas/${usuario.id_usuario}`),
+      api.get(`/empleados/${usuario.id_usuario}`),
+    ])
+      .then(([recepcionista, empleado]) =>
+        setPerfil({
+          departamento: recepcionista.data.departamento,
+          hora_ingreso: empleado.data.hora_ingreso,
+          hora_salida: empleado.data.hora_salida,
+        }),
+      )
+      .catch(() => setPerfil({})); // si falla, se muestra lo básico
+  }, [usuario]);
+
+  const handleCerrarSesion = async () => {
+    await cerrarSesion();
+    navigate('/login');
+  };
+
+  const recepcionista =
+    usuario && usuario.tipo_usuario === 'RECEPCIONISTA'
+      ? { ...usuario, ...perfil }
+      : null;
 
   if (!recepcionista) return <div className="min-h-screen flex items-center justify-center bg-[#f8fbfa]"><p className="font-display text-primary font-bold animate-pulse">Cargando canal de atención...</p></div>;
 
@@ -48,13 +64,13 @@ export default function RecepcionistaDashboard() {
             <span className="text-[9px] font-bold text-on-surface-variant tracking-wider uppercase">Front Desk</span>
           </div>
         </div>
-        <Button variant="outline" className="py-2 px-4 text-xs" onClick={() => { localStorage.removeItem('vetcare_sesion_recepcion'); navigate('/login'); }}>Cerrar Sesión</Button>
+        <Button variant="outline" className="py-2 px-4 text-xs" onClick={handleCerrarSesion}>Cerrar Sesión</Button>
       </nav>
 
       <main className="bg-white w-full max-w-[1000px] rounded-[2rem] shadow-ambient border border-outline-variant/20 p-8 sm:p-12 relative z-10">
         <header className="border-b border-outline-variant/20 pb-6 mb-8">
           <h1 className="font-display text-3xl font-bold text-primary">¡Bienvenido(a), <span className="text-secondary">{recepcionista.nombres} {recepcionista.ap_pat}</span>! 🛎️</h1>
-          <p className="font-body text-sm text-on-surface-variant mt-2">Módulo: <strong className="text-black">{recepcionista.departamento}</strong></p>
+          <p className="font-body text-sm text-on-surface-variant mt-2">Módulo: <strong className="text-black">{recepcionista.departamento || 'Recepción'}</strong></p>
         </header>
 
         <section className="grid grid-cols-1 md:grid-cols-3 gap-6">

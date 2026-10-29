@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, FindOptionsSelect, Repository } from 'typeorm';
+import { DataSource, FindOptionsSelect, Repository, Not } from 'typeorm';
 import { Veterinario } from './entities/veterinarios.entity';
 import { CreateVeterinarioDto, UpdateVeterinarioDto } from './dto/veterinarios.dto';
 import { EmpleadosService } from '../empleados/empleados.service';
@@ -33,6 +33,8 @@ export class VeterinariosService {
 
   listar() {
     return this.repo.find({
+      // Las identidades revocadas (baja lógica) no aparecen en los listados
+      where: { usuario: { estado: Not('REVOCADA') } },
       relations: { usuario: true },
       select: SELECT_VETERINARIO,
       order: { id_usuario: 'ASC' },
@@ -85,17 +87,14 @@ export class VeterinariosService {
   }
 
   async eliminar(id: string) {
-    try {
-      await this.dataSource.transaction(async (manager) => {
-        // Primero la fila del rol: si no existe, el id no es de un veterinario
-        const res = await manager.delete(Veterinario, { id_usuario: id });
-        if (!res.affected) throw new NotFoundException('Veterinario no encontrado.');
-        await this.empleadosService.eliminarBase(manager, id);
-      });
-      return { mensaje: 'Veterinario eliminado.' };
-    } catch (error) {
-      lanzarErrorDb(error, this.logger, 'eliminar', 'el veterinario');
-    }
+    // Baja lógica: la identidad pasa a REVOCADA y se conserva todo su historial
+    const registro = await this.repo.findOne({
+      where: { id_usuario: id },
+      select: { id_usuario: true },
+    });
+    if (!registro) throw new NotFoundException('Veterinario no encontrado.');
+    await this.empleadosService.darDeBaja(id, 'VETERINARIO');
+    return { mensaje: 'Veterinario dado de baja. Su historial se conserva.' };
   }
 
   /** Mascotas que este veterinario ha atendido, con el nombre del dueño y la última consulta. */

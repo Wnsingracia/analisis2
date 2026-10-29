@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Put,
+  Patch,
   Delete,
   Param,
   Body,
@@ -13,7 +14,12 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { UsuariosService } from './usuarios.service';
-import { UpdateUserDto, TIPOS_USUARIO } from './dto/usuarios.dto';
+import {
+  UpdateUserDto,
+  TIPOS_USUARIO,
+  CambiarEstadoDto,
+  CambiarRolDto,
+} from './dto/usuarios.dto';
 import { JwtAuthGuard } from '../guards/JwtAuthGuard';
 import type { JwtPayload } from '../guards/JwtAuthGuard';
 import { RolesGuard } from '../guards/roles.guard';
@@ -59,6 +65,21 @@ export class UsuariosController {
     return this.usuarioServicio.actualizar(id, dto);
   }
 
+  // Suspender, reactivar o revocar una identidad (solo ADMIN)
+  @Roles('ADMIN')
+  @Patch(':id/estado')
+  cambiarEstado(@Param('id', ParseIntPipe) id: number, @Body() dto: CambiarEstadoDto) {
+    return this.usuarioServicio.cambiarEstado(id, dto.estado, dto.motivo);
+  }
+
+  // Cambio de función del personal, con motivo y auditoría (solo ADMIN)
+  @Roles('ADMIN')
+  @Patch(':id/rol')
+  cambiarRol(@Param('id', ParseIntPipe) id: number, @Body() dto: CambiarRolDto) {
+    return this.usuarioServicio.cambiarRol(id, dto);
+  }
+
+  // Baja lógica: la identidad queda REVOCADA, no se borra
   @Roles('ADMIN')
   @Delete(':id')
   eliminar(@Param('id', ParseIntPipe) id: number) {

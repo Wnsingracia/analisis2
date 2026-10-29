@@ -1,13 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-// Structure of the Admin session stored in localStorage
-interface AdminSesion {
-  nombres: string;
-  ap_pat: string;
-  correo: string;
-  tipo_usuario: string;
-}
+import { useAuth } from '../../context/AuthContext';
 
 // ================= MOCK DATA (Simulando la base de datos global) =================
 const globalSearchData = [
@@ -20,20 +13,14 @@ const globalSearchData = [
 export const AdminTopBar: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [admin, setAdmin] = useState<AdminSesion | null>(null); // ◄ Estado para el administrador dinámico
+  const { usuario: admin, cerrarSesion } = useAuth(); // administrador en sesión (AuthContext)
   const [menuOpen, setMenuOpen] = useState(false); // ◄ Estado para el dropdown del perfil
   const dropdownRef = useRef<HTMLDivElement>(null);
   const profileMenuRef = useRef<HTMLDivElement>(null); // ◄ Ref para cerrar el menú de perfil al hacer clic fuera
   const navigate = useNavigate();
 
   useEffect(() => {
-    // 1. Cargar datos del administrador logueado
-    const sesion = localStorage.getItem('vetcare_sesion_admin');
-    if (sesion) {
-      setAdmin(JSON.parse(sesion));
-    }
-
-    // 2. Manejador de clics externos para cerrar menús desplegables
+    // Manejador de clics externos para cerrar menús desplegables
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setIsDropdownOpen(false);
@@ -69,8 +56,8 @@ export const AdminTopBar: React.FC = () => {
     setIsDropdownOpen(value.length > 0); 
   };
 
-  const handleCerrarSesion = () => {
-    localStorage.removeItem('vetcare_sesion_admin');
+  const handleCerrarSesion = async () => {
+    await cerrarSesion(); // borra la cookie en el servidor
     navigate('/login');
   };
 
@@ -163,9 +150,6 @@ export const AdminTopBar: React.FC = () => {
           {/* MENÚ DESPLEGABLE DE PERFIL / ACCIONES */}
           {menuOpen && (
             <div className="absolute right-0 mt-2 w-52 bg-white border border-outline-variant/30 rounded-xl shadow-ambient overflow-hidden z-40 animate-in fade-in slide-in-from-top-1 duration-150">
-              <div className="px-4 py-2.5 border-b border-outline-variant/20 bg-surface-container-low">
-                <p className="font-body text-xs font-semibold text-on-surface-variant truncate">{admin?.correo}</p>
-              </div>
               <button 
                 onClick={handleCerrarSesion}
                 className="w-full text-left font-body text-sm text-error hover:bg-error-container/10 px-4 py-3 flex items-center gap-2 transition-colors font-bold"

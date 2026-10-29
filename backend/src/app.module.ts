@@ -17,6 +17,8 @@ import { RecepcionistasModule } from './recepcionistas/recepcionistas.module';
 import { TratamientosModule } from './tratamientos/tratamientos.module';
 import { AuthModule } from './auth/auth.module';
 
+import { AuditoriaModule } from './auditoria/auditoria.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -47,6 +49,7 @@ import { AuthModule } from './auth/auth.module';
       }),
     }),
 
+    AuditoriaModule,
     UsuariosModule,
     VeterinariosModule,
     AdministradoresModule,
