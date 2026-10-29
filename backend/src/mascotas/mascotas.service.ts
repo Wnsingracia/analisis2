@@ -40,6 +40,8 @@ export class MascotasService {
     });
   }
 
+  
+
   async obtener(id: string, user: JwtPayload) {
     const mascota = await this.repo.findOne({ where: { id_mascota: id } });
 

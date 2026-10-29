@@ -38,7 +38,7 @@ export default function MisMascotas() {
 
       try {
         const respuesta = await api.get(
-          `/mascotas/${usuario.id_usuario}`
+          `/mascotas`
         );
 
         // Admite una respuesta que sea directamente un array

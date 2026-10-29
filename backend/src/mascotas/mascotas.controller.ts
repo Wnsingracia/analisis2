@@ -33,6 +33,7 @@ export class MascotasController {
   ) {
     return this.servicio.listar(user, idCliente);
   }
+  
 
   @Roles(...TIPOS_USUARIO)
   @Get(':id')
