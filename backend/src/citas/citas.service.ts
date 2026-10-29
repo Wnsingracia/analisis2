@@ -51,36 +51,38 @@ export class CitasService {
    * - CLIENTE: solo sus citas.
    */
   async agenda(user: JwtPayload) {
-    const rol = rolDe(user);
-    const id = idDe(user);
+  const rol = rolDe(user);
+  const id = idDe(user);
 
-    const joinConsulta =
-      rol === 'VETERINARIO'
-        ? 'LEFT JOIN consultas cm ON c.id_cita = cm.id_cita AND cm.id_veterinario = $1'
-        : 'LEFT JOIN consultas cm ON c.id_cita = cm.id_cita';
-    const filtro = rol === 'CLIENTE' ? 'WHERE c.id_cliente = $1' : '';
-    const params = rol === 'ADMIN' ? [] : [id];
+  const joinConsulta =
+    rol === 'VETERINARIO'
+      ? 'LEFT JOIN consultas cm ON c.id_cita = cm.id_cita AND cm.id_veterinario = $1'
+      : 'LEFT JOIN consultas cm ON c.id_cita = cm.id_cita';
+  const filtro = rol === 'CLIENTE' ? 'WHERE c.id_cliente = $1' : '';
 
-    try {
-      return await this.dataSource.query(
-        `SELECT c.id_cita, c.fecha, c.hora, c.tipo,
-                c.descripcion AS cita_descripcion, c.costo,
-                c.id_mascota, c.id_cliente, c.id_recepcionista,
-                t.id_tratamiento,
-                t.descripcion AS tratamiento_descripcion,
-                t.fecha_emision
-           FROM citas c
-           ${joinConsulta}
-           LEFT JOIN tratamientos t ON cm.id_cons_medica = t.id_cons_medica
-           ${filtro}
-          ORDER BY c.fecha DESC, c.hora DESC`,
-        params,
-      );
-    } catch (error) {
-      this.logger.error('Error al obtener la agenda', (error as Error)?.stack);
-      throw new BadRequestException('No se pudo obtener la agenda.');
-    }
+  // Solo hay $1 en la consulta para VETERINARIO y CLIENTE
+  const params = rol === 'VETERINARIO' || rol === 'CLIENTE' ? [id] : [];
+
+  try {
+    return await this.dataSource.query(
+      `SELECT c.id_cita, c.fecha, c.hora, c.tipo,
+              c.descripcion AS cita_descripcion, c.costo,
+              c.id_mascota, c.id_cliente, c.id_recepcionista,
+              t.id_tratamiento,
+              t.descripcion AS tratamiento_descripcion,
+              t.fecha_emision
+         FROM citas c
+         ${joinConsulta}
+         LEFT JOIN tratamientos t ON cm.id_cons_medica = t.id_cons_medica
+         ${filtro}
+        ORDER BY c.fecha DESC, c.hora DESC`,
+      params,
+    );
+  } catch (error) {
+    this.logger.error('Error al obtener la agenda', (error as Error)?.stack);
+    throw new BadRequestException('No se pudo obtener la agenda.');
   }
+}
 
   async crear(dto: CreateCitaDto, user: JwtPayload) {
     // Un recepcionista siempre queda registrado como quien creó la cita

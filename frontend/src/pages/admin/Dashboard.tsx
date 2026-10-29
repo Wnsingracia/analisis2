@@ -1,40 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-// Definimos la estructura que esperamos recibir del administrador en sesión
-interface AdminData {
-  id: number;
-  nombres: string;
-  ap_pat: string;
-  correo: string;
-  tipo_usuario: string;
-}
+import { useAuth } from '../../context/AuthContext';
 
 export default function Dashboard() {
   const navigate = useNavigate();
-  const [admin, setAdmin] = useState<AdminData | null>(null);
+  // La sesión vive en AuthContext (cookie httpOnly validada por /auth/me), no en localStorage
+  const { usuario, cargando } = useAuth();
 
   useEffect(() => {
-    // 1. Recuperamos la sesión guardada al iniciar sesión
-    const sesionGuardada = localStorage.getItem('vetcare_sesion_admin');
-
-    if (!sesionGuardada) {
-      alert("Acceso denegado. Por favor, inicia sesión como Administrador.");
-      navigate('/login');
-      return;
+    if (cargando) return; // espera a que AuthProvider termine de consultar /auth/me
+    if (!usuario || usuario.tipo_usuario !== 'ADMIN') {
+      navigate('/login', { replace: true });
     }
+  }, [cargando, usuario, navigate]);
 
-    const datosUsuario = JSON.parse(sesionGuardada);
-
-    // 2. Control estricto: Si no es un ADMIN, lo expulsamos
-    if (datosUsuario.tipo_usuario !== 'ADMIN') {
-      alert("No tienes permisos de administrador para visualizar este panel.");
-      navigate('/login');
-      return;
-    }
-
-    setAdmin(datosUsuario);
-  }, [navigate]);
+  const admin = usuario && usuario.tipo_usuario === 'ADMIN' ? usuario : null;
 
   // Si la sesión está cargando, evitamos el parpadeo visual mostrando un loader limpio
   if (!admin) {

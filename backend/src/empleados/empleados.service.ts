@@ -5,7 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, FindOptionsSelect, Repository } from 'typeorm';
+import { EntityManager, FindOptionsSelect, Repository, Not } from 'typeorm';
 import { Empleado } from './entities/empleados.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { SELECT_PUBLICO, UsuariosService } from '../usuarios/usuarios.service';
@@ -56,16 +56,16 @@ export class EmpleadosService {
     return id_usuario;
   }
 
-  /** Borra empleados y usuarios. La fila del rol se borra antes, en su propio servicio. */
-  async eliminarBase(manager: EntityManager, id: string): Promise<void> {
-    await manager.delete(Empleado, { id_usuario: id });
-    await manager.delete(Usuario, { id_usuario: id });
+  /** Baja lógica de un empleado: la identidad pasa a REVOCADA, sin borrar filas. */
+  darDeBaja(id: string, rol: TipoPersonal): Promise<void> {
+    return this.usuariosService.darDeBaja(id, rol);
   }
 
   // ---------- Endpoints de /empleados ----------
 
   listar() {
     return this.repo.find({
+      where: { usuario: { estado: Not('REVOCADA') } },
       relations: { usuario: true },
       select: SELECT_EMPLEADO,
       order: { id_usuario: 'ASC' },
@@ -77,6 +77,7 @@ export class EmpleadosService {
       return await this.repo
         .createQueryBuilder('e')
         .innerJoin(Usuario, 'u', 'u.id_usuario = e.id_usuario')
+        .where("u.estado <> 'REVOCADA'")
         .select([
           'e.id_usuario AS id_usuario',
           'u.nombres AS nombres',
@@ -84,6 +85,7 @@ export class EmpleadosService {
           'u.ap_mat AS ap_mat',
           'u.correo AS correo',
           'u.tipo_usuario AS tipo_usuario',
+          'u.estado AS estado',
         ])
         .orderBy('e.id_usuario', 'ASC')
         .getRawMany();

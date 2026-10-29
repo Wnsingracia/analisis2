@@ -6,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, FindOptionsSelect, Repository } from 'typeorm';
+import { DataSource, FindOptionsSelect, Repository, Not } from 'typeorm';
 import { Administradores } from './entities/administradores.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { SELECT_PUBLICO, UsuariosService } from '../usuarios/usuarios.service';
@@ -35,6 +35,8 @@ export class AdministradoresService {
 
   listar() {
     return this.repo.find({
+      // Las identidades revocadas (baja lógica) no aparecen en los listados
+      where: { usuario: { estado: Not('REVOCADA') } },
       relations: { usuario: true },
       select: SELECT_ADMIN,
       order: { id_usuario: 'ASC' },
@@ -87,19 +89,13 @@ export class AdministradoresService {
     if (id === idSolicitante) {
       throw new BadRequestException('No puedes eliminar tu propia cuenta.');
     }
-
-    try {
-      await this.dataSource.transaction(async (manager) => {
-        if ((await manager.count(Administradores)) <= 1) {
-          throw new ConflictException('No se puede eliminar al último administrador.');
-        }
-        const res = await manager.delete(Administradores, { id_usuario: id });
-        if (!res.affected) throw new NotFoundException('Administrador no encontrado.');
-        await manager.delete(Usuario, { id_usuario: id });
-      });
-      return { mensaje: 'Administrador eliminado.' };
-    } catch (error) {
-      lanzarErrorDb(error, this.logger, 'eliminar', 'el administrador');
-    }
+    // Baja lógica. El último administrador activo queda protegido en UsuariosService.
+    const registro = await this.repo.findOne({
+      where: { id_usuario: id },
+      select: { id_usuario: true },
+    });
+    if (!registro) throw new NotFoundException('Administrador no encontrado.');
+    await this.usuariosService.darDeBaja(id, 'ADMIN');
+    return { mensaje: 'Administrador dado de baja. Su historial se conserva.' };
   }
 }

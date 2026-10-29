@@ -1,59 +1,51 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 interface Paciente {
-  id_mascota: number;
+  id_mascota: string; // el backend devuelve los ids como texto
   nombre: string;
   tipo: string;
   raza: string;
   edad: string;
   genero: string;
   dueno_nombre: string;
-  ultima_consulta: string;
+  ultima_consulta: string | null;
 }
 
 export default function MisPacientes() {
   const navigate = useNavigate();
+  const { usuario, cargando: cargandoSesion } = useAuth();
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
-    const cargarPacientes = async () => {
-      const sesion = localStorage.getItem('vetcare_sesion_vet');
-      if (!sesion) return navigate('/login');
-      
-      const datos = JSON.parse(sesion);
-      // 🛠️ SOLUCIÓN: Validamos ambas propiedades para evitar el 'undefined'
-      const idVeterinario = datos.id_usuario || datos.id; 
+    // Se espera a que AuthProvider termine de consultar /auth/me;
+    // si no, al refrescar la página se redirigiría al login por error.
+    if (cargandoSesion) return;
 
-      if (!idVeterinario) {
-        console.error("No se encontró id_usuario ni id en el objeto de sesión:", datos);
-        alert("Error de autenticación: No se pudo identificar tu ID de personal. Por favor, reincia sesión.");
-        navigate('/login');
-        return;
-      }
-      
-      try {
-        const res = await api.get(`/veterinarios/${idVeterinario}/pacientes`);
-        setPacientes(res.data);
-      } catch (error: any) {
-        console.error("Error al cargar pacientes:", error);
-        alert("Error al cargar tus pacientes atendidos.");
-      } finally {
-        setCargando(false);
-      }
-    };
-    cargarPacientes();
-  }, [navigate]);
+    if (!usuario || usuario.tipo_usuario !== 'VETERINARIO') {
+      navigate('/login', { replace: true });
+      return;
+    }
 
+    api
+      .get(`/veterinarios/${usuario.id_usuario}/pacientes`)
+      .then((res) => setPacientes(res.data))
+      .catch((error: any) => {
+        console.error('Error al cargar pacientes:', error);
+        alert(error.response?.data?.message || 'Error al cargar tus pacientes atendidos.');
+      })
+      .finally(() => setCargando(false));
+  }, [cargandoSesion, usuario, navigate]);
   return (
     <div className="min-h-screen w-full bg-[#f8fbfa] p-6 font-body">
       <div className="max-w-[1000px] mx-auto bg-white rounded-[2rem] shadow-ambient border border-outline-variant/20 p-8">
         
         <header className="mb-6 flex items-center justify-between border-b border-outline-variant/20 pb-4">
           <div>
-            <Link to="/vet/dashboard" className="text-xs font-bold text-on-surface-variant hover:text-primary flex items-center gap-1 mb-2">
+            <Link to="/dashboard-veterinario" className="text-xs font-bold text-on-surface-variant hover:text-primary flex items-center gap-1 mb-2">
               <span className="material-symbols-outlined text-[14px]">arrow_back</span> Volver al Dashboard
             </Link>
             <h1 className="font-display text-2xl font-bold text-primary">Mis Pacientes Atendidos</h1>

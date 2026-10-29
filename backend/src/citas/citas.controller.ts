@@ -31,7 +31,7 @@ export class CitasController {
   }
 
   // Citas con su consulta y tratamiento. Debe ir ANTES de ':id'
-  @Roles('ADMIN', 'VETERINARIO', 'CLIENTE')
+  @Roles('ADMIN', 'VETERINARIO','RECEPCIONISTA', 'CLIENTE')
   @Get('agenda')
   agenda(@UsuarioActual() user: JwtPayload) {
     return this.servicio.agenda(user);

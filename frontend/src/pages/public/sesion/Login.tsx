@@ -5,65 +5,57 @@ import { InputField } from '../../../components/ui/InputField';
 import api from '../../../services/api'; 
 
 import logoVetCare2 from '../../../assets/logo-VetCare2.jpeg';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function Login() {
   const navigate = useNavigate(); 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
+  const { setUsuario } = useAuth()
+
+  // Fuera del componente: a qué pantalla va cada rol
+  const RUTA_POR_ROL: Record<string, string> = {
+    ADMIN: '/admin/dashboard',
+    CLIENTE: '/dashboard-cliente',
+    VETERINARIO: '/dashboard-veterinario',
+    ESTILISTA: '/dashboard-estilista',
+    RECEPCIONISTA: '/dashboard-recepcionista',
+  };
 
   // ◄ AQUÍ VA LA FUNCIÓN MODIFICADA QUE GESTIONA AMBAS CUENTAS
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      // 1. Enviamos las credenciales al backend
-      const response = await api.post('/auth/login', {
-        correo: email,
-        contrasenia: password,
-      });
+  try {
+    // El backend responde con { mensaje, usuario } y deja el token en una cookie httpOnly
+    const { data } = await api.post('/auth/login', {
+      correo: email,
+      contrasenia: password,
+    });
 
-      // 2. Extraemos el Token JWT y el sub-objeto del usuario desde la nueva estructura del NestJS
-      const { accessToken, usuario } = response.data; 
+    const usuario = data.usuario;
+    const destino = RUTA_POR_ROL[usuario?.tipo_usuario];
 
-      if (!accessToken) {
-        throw new Error('El servidor no retornó un token de autorización válido.');
-      }
-
-      // 3. PERSISTENCIA GLOBAL: Guardamos el JWT para que el interceptor de Axios lo firme en cada petición
-      localStorage.setItem('vetcare_token', accessToken);
-
-      // 4. Evaluamos el rol (tipo_usuario) para guardar su sesión y redirigir al dashboard correcto
-      const tipoUsuario = usuario.tipo_usuario;
-
-      if (tipoUsuario === 'ADMIN') {
-        localStorage.setItem('vetcare_sesion_admin', JSON.stringify(usuario));
-        navigate('/admin/dashboard');
-        
-      } else if (tipoUsuario === 'CLIENTE') {
-        localStorage.setItem('vetcare_sesion', JSON.stringify(usuario));
-        navigate('/dashboard-cliente');
-        
-      } else if (tipoUsuario === 'VETERINARIO') {
-        localStorage.setItem('vetcare_sesion_vet', JSON.stringify(usuario));
-        navigate('/dashboard-veterinario');
-        
-      } else if (tipoUsuario === 'ESTILISTA') {
-        localStorage.setItem('vetcare_sesion_estilista', JSON.stringify(usuario));
-        navigate('/dashboard-estilista');
-        
-      } else if (tipoUsuario === 'RECEPCIONISTA') {
-        localStorage.setItem('vetcare_sesion_recepcion', JSON.stringify(usuario));
-        navigate('/dashboard-recepcionista');
-      }
-
-    } catch (error: any) {
-      console.error('Error en el inicio de sesión:', error);
-      // Atrapamos el mensaje descriptivo del BadRequestException de NestJS
-      const mensajeError = error.response?.data?.message || 'Credenciales incorrectas o problemas de conexión.';
-      alert(`Error de ingreso: ${mensajeError}`);
+    if (!destino) {
+      alert('Tu tipo de usuario no tiene un panel asignado.');
+      return;
     }
-  };
+
+    // La sesión vive en memoria (AuthContext); nada se guarda en localStorage
+    setUsuario(usuario);
+    navigate(destino);
+  } catch (error: any) {
+    console.error('Error en el inicio de sesión:', error);
+
+    // Nest devuelve un array de mensajes cuando falla la validación del DTO
+    const msg = error.response?.data?.message;
+    const texto = Array.isArray(msg)
+      ? msg.join('\n')
+      : msg || 'Credenciales incorrectas o problemas de conexión.';
+    alert(`Error de ingreso: ${texto}`);
+  }
+};
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative bg-[#f8fbfa] overflow-hidden">

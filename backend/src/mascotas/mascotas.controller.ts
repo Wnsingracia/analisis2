@@ -49,7 +49,6 @@ export class MascotasController {
     return this.servicio.crear(dto, user);
   }
 
-  // El veterinario puede actualizar peso, alergias, etc. durante la consulta
   @Roles('ADMIN', 'RECEPCIONISTA', 'VETERINARIO', 'CLIENTE')
   @Put(':id')
   actualizar(

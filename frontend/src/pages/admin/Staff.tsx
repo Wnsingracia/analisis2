@@ -217,7 +217,6 @@ export default function Staff() {
                   <th className="py-4 px-6 font-body text-xs font-bold text-on-surface-variant uppercase tracking-wider">Nombre</th>
                   <th className="py-4 px-6 font-body text-xs font-bold text-on-surface-variant uppercase tracking-wider">Correo</th>
                   <th className="py-4 px-6 font-body text-xs font-bold text-on-surface-variant uppercase tracking-wider">Rol en Sistema</th>
-                  <th className="py-4 px-6 font-body text-xs font-bold text-on-surface-variant uppercase tracking-wider text-center w-32">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant/20 bg-white">
@@ -236,16 +235,6 @@ export default function Staff() {
                         >
                           {staff.tipo_usuario}
                         </span>
-                      </td>
-                      <td className="py-4 px-6 text-center">
-                        <div className="flex items-center justify-center gap-2">
-                          <button onClick={() => openEditModal(staff)} className="w-8 h-8 rounded-lg flex items-center justify-center text-tertiary hover:bg-tertiary-container/50 transition-colors" title="Editar">
-                            <span className="material-symbols-outlined text-[20px]">edit</span>
-                          </button>
-                          <button onClick={() => openDeleteModal(staff.id_usuario)} className="w-8 h-8 rounded-lg flex items-center justify-center text-error hover:bg-error-container/50 transition-colors" title="Eliminar">
-                            <span className="material-symbols-outlined text-[20px]">delete</span>
-                          </button>
-                        </div>
                       </td>
                     </tr>
                   ))

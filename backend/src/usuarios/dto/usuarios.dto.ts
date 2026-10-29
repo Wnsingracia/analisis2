@@ -1,11 +1,14 @@
 import {
   IsEmail,
   IsIn,
+  IsInt,
   IsNotEmpty,
   IsNumberString,
   IsOptional,
   IsString,
   Length,
+  MaxLength,
+  MinLength,
 } from 'class-validator';
 
 export const TIPOS_USUARIO = [
@@ -94,4 +97,47 @@ export class UpdateUserDto {
   @IsString({ message: 'La contraseña debe ser texto' })
   @Length(6, 255, { message: 'La contraseña debe tener por lo menos 6 caracteres' })
   contrasenia?: string;
+}
+
+// ---------- Ciclo de vida de la identidad (Parte 1) ----------
+
+export const ESTADOS_CUENTA = ['ACTIVA', 'SUSPENDIDA', 'REVOCADA'] as const;
+export type EstadoCuenta = (typeof ESTADOS_CUENTA)[number];
+
+// Roles entre los que se puede cambiar. CLIENTE no entra: es otra clase de identidad.
+export const ROLES_PERSONAL = ['ADMIN', 'VETERINARIO', 'ESTILISTA', 'RECEPCIONISTA'] as const;
+
+export class CambiarEstadoDto {
+  @IsIn(ESTADOS_CUENTA, {
+    message: `El estado debe ser uno de: ${ESTADOS_CUENTA.join(', ')}`,
+  })
+  estado!: EstadoCuenta;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  motivo?: string;
+}
+
+export class CambiarRolDto {
+  @IsString()
+  @IsNotEmpty()
+  tipo_usuario!: string;
+
+  @IsString({ message: 'Debes indicar el motivo del cambio de rol' })
+  @MinLength(3, { message: 'El motivo debe tener al menos 3 caracteres' })
+  @MaxLength(300)
+  motivo!: string;
+
+  // Datos propios del rol de destino (todos opcionales)
+  @IsOptional() @IsString() especializacion?: string; // VETERINARIO
+  @IsOptional() @IsString() titulo?: string; // VETERINARIO
+  @IsOptional() @IsString() rol?: string; // ESTILISTA
+  @IsOptional() @IsString() departamento?: string; // RECEPCIONISTA
+  @IsOptional() @IsString() nvl_acceso?: string; // ADMIN
+
+  // Solo se usan si la persona aún no tiene fila de empleado
+  @IsOptional() @IsInt() salario?: number;
+  @IsOptional() @IsString() hora_ingreso?: string;
+  @IsOptional() @IsString() hora_salida?: string;
 }

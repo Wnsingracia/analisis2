@@ -22,6 +22,9 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({ onOpenGlobalAppointment 
             <p className="font-body text-xs font-semibold text-on-surface-variant">Paws & Palms</p>
           </div>
         </div>
+        
+
+        
       </div>
 
       <div className="flex-1 overflow-y-auto px-2">
@@ -43,6 +46,12 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({ onOpenGlobalAppointment 
             <Link to="/admin/staff" className={`rounded-xl font-body text-sm font-semibold flex items-center px-4 py-3 mx-2 transition-all duration-200 ${isActive('/admin/staff') ? 'bg-primary-container text-white shadow-sm' : 'text-on-surface-variant hover:bg-surface-variant/50 hover:translate-x-1 hover:text-primary'}`}>
               <span className={`material-symbols-outlined mr-3 ${isActive('/admin/staff') ? 'icon-fill' : ''}`}>badge</span>
               Personal
+            </Link>
+          </li>
+          <li>
+            <Link to="/admin/identidades" className={`rounded-xl font-body text-sm font-semibold flex items-center px-4 py-3 mx-2 transition-all duration-200 ${isActive('/admin/identidades') ? 'bg-primary-container text-white shadow-sm' : 'text-on-surface-variant hover:bg-surface-variant/50 hover:translate-x-1 hover:text-primary'}`}>
+              <span className={`material-symbols-outlined mr-3 ${isActive('/admin/identidades') ? 'icon-fill' : ''}`}>admin_panel_settings</span>
+              Identidades
             </Link>
           </li>
           <li>

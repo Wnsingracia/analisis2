@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect,useState } from 'react';
 import { useSearchParams, useNavigate, Link } from 'react-router-dom';
 import { InputField } from '../../../components/ui/InputField';
 import { Button } from '../../../components/ui/Button';
@@ -10,44 +10,58 @@ export default function ResetPassword() {
   const navigate = useNavigate();
   
   // Capturamos el token '?token=XYZ' que viaja en el enlace del correo
-  const token = searchParams.get('token'); 
+  // ...dentro del componente, en lugar de `const token = searchParams.get('token');`
+  const [token] = useState(() => searchParams.get('token')); // se guarda al montar
+
+  useEffect(() => {
+    // Quita ?token=... de la barra de direcciones sin recargar la página
+    if (searchParams.has('token')) navigate('/reset-password', { replace: true });
+  }, [searchParams, navigate]);
 
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [cargando, setCargando] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (password !== confirmPassword) {
-      alert('Las contraseñas no coinciden. Verifica que estén escritas igual.');
-      return;
-    }
+  if (password !== confirmPassword) {
+    alert('Las contraseñas no coinciden. Verifica que estén escritas igual.');
+    return;
+  }
 
-    if (!token) {
-      alert('El token de recuperación no es válido o ha sido alterado.');
-      return;
-    }
+  // El backend exige al menos 6 caracteres (tu documento pide 12; ver nota abajo)
+  if (password.length < 6) {
+    alert('La contraseña debe tener por lo menos 6 caracteres.');
+    return;
+  }
 
-    setCargando(true);
-    try {
-      // Enviamos el token y la nueva contraseña al backend
-      const res = await api.post('/auth/recuperar', {
-        token: token,
-        contrasenia: password
-      });
+  if (!token) {
+    alert('El token de recuperación no es válido o ha sido alterado.');
+    return;
+  }
 
-      alert(res.data.mensaje);
-      navigate('/login'); // Redirigimos al usuario al login para que entre con su nueva clave
+  setCargando(true);
+  try {
+    const res = await api.post('/auth/restablecer', {
+      token,
+      nuevaContrasenia: password,
+    });
 
-    } catch (error: any) {
-      console.error(error);
-      const mensajeError = error.response?.data?.message || 'El enlace ha expirado o ya fue utilizado.';
-      alert(`Error: ${mensajeError}`);
-    } finally {
-      setCargando(false);
-    }
-  };
+    alert(res.data.mensaje);
+    navigate('/login');
+  } catch (error: any) {
+    console.error(error);
+    // Nest devuelve un array de mensajes cuando falla la validación del DTO
+    const msg = error.response?.data?.message;
+    const texto = Array.isArray(msg)
+      ? msg.join('\n')
+      : msg || 'El enlace ha expirado o ya fue utilizado.';
+    alert(`Error: ${texto}`);
+  } finally {
+    setCargando(false);
+  }
+};
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative bg-[#f8fbfa] overflow-hidden">
