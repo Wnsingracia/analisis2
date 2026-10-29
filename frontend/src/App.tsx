@@ -1,21 +1,28 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from 'react-router-dom';
+
 import Home from './pages/public/Home';
 import Login from './pages/public/sesion/Login';
 import Register from './pages/public/sesion/Register';
 import ForgotPassword from './pages/public/sesion/ForgotPassword';
 import ResetPassword from './pages/public/sesion/ResetPassword';
 
-//IMPORTS DE LAS PÚBLICAS NUEVAS (Servicios, Nosotros, Citas, etc.)
+//IMPORTS DE LAS PÚBLICAS NUEVAS (Servicios, Nosotros, etc.)
 import Servicios from './pages/public/Servicios';
 import Nosotros from './pages/public/Nosotros';
-import Citas from './pages/public/Citas';
 import Privacidad from './pages/public/Privacidad';
 import Terminos from './pages/public/Terminos';
 import Contacto from './pages/public/Contacto';
+import NotFound from './pages/public/NotFound';
 
 // Layout de Admin y vistas de Admin
 import { AdminLayout } from './components/layout/AdminLayout'; 
 import { RecepcionistaLayout } from './components/layout/RecepcionistaLayout'; 
+import { ClienteLayout } from './components/layout/ClienteLayout';
 import Dashboard from './pages/admin/Dashboard';
 import Staff from './pages/admin/Staff';
 import Identidades from './pages/admin/Identidades';
@@ -23,6 +30,7 @@ import Clients from './pages/admin/Clientes';
 import Inventory from './pages/admin/Inventory';
 import Appointments from './pages/admin/Appointments';
 import ClinicalHistory from './pages/admin/ClinicalHistory';
+import MisMascotas from './pages/cliente/MisMascotas';
 
 // Dashboards por rol y otros
 import ClientDashboard from './pages/public/dashboard/ClientDashBoard';
@@ -36,53 +44,62 @@ function App() {
   return (
     <Router>
       <Routes>
-        {/* ==========================================
-            VISTAS PÚBLICAS (Incluyendo Servicios, Nosotros y Citas)
-           ========================================== */}
+        {/* PÁGINAS PÚBLICAS */}
         <Route path="/" element={<Home />} />
         <Route path="/servicios" element={<Servicios />} />
         <Route path="/nosotros" element={<Nosotros />} />
-        <Route path="/citas" element={<Citas />} />
-        
-        {/* Rutas del footer */}
         <Route path="/privacidad" element={<Privacidad />} />
         <Route path="/terminos" element={<Terminos />} />
         <Route path="/contacto" element={<Contacto />} />
+        
 
-        {/* Rutas de autenticación */}
+        {/* AUTENTICACIÓN */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        
-        {/* ==========================================
-            ENTORNOS PRIVADOS POR ROL (INDEPENDIENTES)
-           ========================================== */}
-        <Route path="/dashboard-cliente" element={<ClientDashboard />} />
-        <Route path="/dashboard-veterinario" element={<VeterinarioDashboard />} />
-        <Route path="/dashboard-estilista" element={<EstilistaDashboard />} />
-        <Route path="/dashboard-recepcionista" element={<RecepcionistaDashboard />} />
-        <Route path="/vet/mis-pacientes" element={<MisPacientes />} />
 
+        {/* DASHBOARDS POR ROL */}
+        <Route path="/dashboard-veterinario" element={<VeterinarioDashboard />}/>
+        <Route path="/dashboard-estilista"  element={<EstilistaDashboard />}/>
+        <Route path="/vet/mis-pacientes" element={<MisPacientes />}/>
 
-        {/* ==========================================
-            ENTORNO PRIVADO DEL ADMINISTRADOR (CON LAYOUT)
-           ========================================== */}
+        {/* ENTORNO DEL ADMINISTRADOR */}
         <Route path="/admin" element={<AdminLayout />}>
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="staff" element={<Staff />} />
           <Route path="identidades" element={<Identidades />} />
-          <Route path="clients" element={<Clients />} /> 
+          <Route path="clients" element={<Clients />} />
           <Route path="inventory" element={<Inventory />} />
           <Route path="appointments" element={<Appointments />} />
-          <Route path="clinical-history/:idMascota" element={<ClinicalHistory />} />
+          <Route path="clinical-history/:idMascota"element={<ClinicalHistory />}/>
         </Route>
 
-        <Route path="/recepcionista" element={<RecepcionistaLayout />}>
-        <Route path="dashboard" element={<RecepcionistaDashboard />}/>
-        <Route path="appointments" element={<Appointments />}/>
-        <Route path="inventory" element={<Inventory />}/>
+        {/* ENTORNO DEL CLIENTE*/}
+        <Route path="/cliente" element={<ClienteLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<ClientDashboard />}/>
+          <Route path="mascotas" element={<MisMascotas />}/>
+          <Route path="catalogo" element={<div>Catálogo de servicios y productos</div>}/>
+          <Route path="citas" element={<div>Mis Citas</div>}/>
         </Route>
+        {/* REDIRECCIÓN DEL DASHBOARD ANTERIOR */}
+        <Route path="/dashboard-cliente" element={<Navigate to="/cliente/dashboard" replace />}/>
+
+        {/* ENTORNO DEL RECEPCIONISTA */}
+        <Route path="/recepcionista"element={<RecepcionistaLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />}/>
+          <Route path="dashboard" element={<RecepcionistaDashboard />}/>
+          <Route path="appointments" element={<Appointments />}/>
+          <Route path="inventory"element={<Inventory />}/>
+        </Route>
+
+        {/* REDIRECCIÓN DE LA RUTA ANTERIOR */}
+        <Route path="/dashboard-recepcionista"element={<Navigate to="/recepcionista/dashboard" replace/>}/>
+        <Route path="/dashboard-cliente"element={<Navigate to="/cliente/dashboard" replace/>}/>
+        
+        {/* PÁGINA 404: cualquier ruta inexistente */}
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </Router>
   );
