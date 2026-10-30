@@ -40,13 +40,26 @@ export class MascotasService {
     });
   }
    
-  async obtener(id: string, user: JwtPayload) {
+  async obtener(id: string,user: JwtPayload,idCliente?: string,) {
+    const rol = rolDe(user);
+
     const where: any = {
       id_mascota: id,
     };
 
-    if (rolDe(user) === 'CLIENTE') {
+    if (rol === 'CLIENTE') {
+      // El propietario siempre sale del JWT.
       where.id_cliente = idDe(user);
+    } else if (rol === 'RECEPCIONISTA' || rol === 'ADMIN') {
+      // El personal debe indicar el cliente para evitar
+      // confundir mascotas con identificadores repetidos.
+      if (!idCliente || !/^\d+$/.test(idCliente)) {
+        throw new BadRequestException(
+          'Debes proporcionar un id_cliente válido.',
+        );
+      }
+
+      where.id_cliente = idCliente;
     }
 
     const mascota = await this.repo.findOne({ where });
@@ -73,8 +86,13 @@ export class MascotasService {
   }
 
 
-async actualizar(id: string,dto: UpdateMascotaDto,user: JwtPayload,) {
-    const mascota = await this.obtener(id, user);
+  async actualizar(id: string,dto: UpdateMascotaDto,user: JwtPayload,idCliente?: string,) {
+    const rol = rolDe(user);
+
+    const propietario =
+      rol === 'CLIENTE' ? idDe(user) : idCliente;
+
+    const mascota = await this.obtener(id, user, propietario);
 
     const cambios = sinUndefined({ ...dto });
 
@@ -92,19 +110,42 @@ async actualizar(id: string,dto: UpdateMascotaDto,user: JwtPayload,) {
         },
         cambios,
       );
+
+      return this.repo.findOne({
+        where: {
+          id_mascota: mascota.id_mascota,
+          id_cliente: mascota.id_cliente,
+        },
+      });
     } catch (error) {
       lanzarErrorDb(error, this.logger, 'actualizar', 'la mascota');
     }
-
-    return this.obtener(id, user);
   }
 
-  async eliminar(id: string) {
+  async eliminar(id: string, idCliente: string) {
+    if (!idCliente || !/^\d+$/.test(idCliente)) {
+      throw new BadRequestException('Debes proporcionar un id_cliente válido.');
+    }
+
     try {
-      const res = await this.repo.delete({ id_mascota: id });
-      if (!res.affected) throw new NotFoundException('Mascota no encontrada.');
+      const res = await this.repo.delete({
+        id_mascota: id,
+        id_cliente: idCliente,
+      });
+
+      if (!res.affected) {
+        throw new NotFoundException('Mascota no encontrada.');
+      }
+
       return { mensaje: 'Mascota eliminada.' };
     } catch (error) {
+      if (
+        error instanceof BadRequestException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+
       lanzarErrorDb(error, this.logger, 'eliminar', 'la mascota');
     }
   }

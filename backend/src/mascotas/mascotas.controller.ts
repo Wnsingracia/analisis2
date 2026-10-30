@@ -40,8 +40,13 @@ export class MascotasController {
   obtener(
     @Param('id', ParseIntPipe) id: number,
     @UsuarioActual() user: JwtPayload,
+    @Query('id_cliente') idCliente?: string,
   ) {
-    return this.servicio.obtener(String(id), user);
+    return this.servicio.obtener(
+      String(id),
+      user,
+      idCliente,
+    );
   }
 
   @Roles('ADMIN', 'RECEPCIONISTA', 'CLIENTE')
@@ -56,13 +61,22 @@ export class MascotasController {
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateMascotaDto,
     @UsuarioActual() user: JwtPayload,
+    @Query('id_cliente') idCliente?: string,
   ) {
-    return this.servicio.actualizar(String(id), dto, user);
+    return this.servicio.actualizar(
+      String(id),
+      dto,
+      user,
+      idCliente,
+    );
   }
   
   @Roles('ADMIN')
   @Delete(':id')
-  eliminar(@Param('id', ParseIntPipe) id: number) {
-    return this.servicio.eliminar(String(id));
+  eliminar(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('id_cliente') idCliente: string,
+  ) {
+    return this.servicio.eliminar(String(id), idCliente);
   }
 }

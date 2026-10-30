@@ -22,7 +22,6 @@ import NotFound from './pages/public/NotFound';
 // Layout de Admin y vistas de Admin
 import { AdminLayout } from './components/layout/AdminLayout'; 
 import { RecepcionistaLayout } from './components/layout/RecepcionistaLayout'; 
-import { ClienteLayout } from './components/layout/ClienteLayout';
 import Dashboard from './pages/admin/Dashboard';
 import Staff from './pages/admin/Staff';
 import Identidades from './pages/admin/Identidades';
@@ -30,7 +29,12 @@ import Clients from './pages/admin/Clientes';
 import Inventory from './pages/admin/Inventory';
 import Appointments from './pages/admin/Appointments';
 import ClinicalHistory from './pages/admin/ClinicalHistory';
+
+
+// Layout de Admin y vistas de Cliente
+import { ClienteLayout } from './components/layout/ClienteLayout';
 import MisMascotas from './pages/cliente/MisMascotas';
+import MisCitas from './pages/cliente/MisCitas';
 
 // Dashboards por rol y otros
 import ClientDashboard from './pages/public/dashboard/ClientDashBoard';
@@ -81,7 +85,7 @@ function App() {
           <Route path="dashboard" element={<ClientDashboard />}/>
           <Route path="mascotas" element={<MisMascotas />}/>
           <Route path="catalogo" element={<div>Catálogo de servicios y productos</div>}/>
-          <Route path="citas" element={<div>Mis Citas</div>}/>
+          <Route path="citas" element={<MisCitas />} />
         </Route>
         {/* REDIRECCIÓN DEL DASHBOARD ANTERIOR */}
         <Route path="/dashboard-cliente" element={<Navigate to="/cliente/dashboard" replace />}/>
