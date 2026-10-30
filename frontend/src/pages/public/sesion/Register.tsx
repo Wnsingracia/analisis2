@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; // Agregamos useNavigate para redirigir
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
 import { InputField } from '../../../components/ui/InputField';
-import api from '../../../services/api'; // ◄ Importa tu instancia de Axios
+import api from '../../../services/api';
 import logoVetCare2 from '../../../assets/logo-VetCare2.jpeg';
+import Captcha from '../../../components/seguridad/Captcha';
 
 export default function Register() {
-  const navigate = useNavigate(); // Para mandar al login tras registrarse
+  const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     nombres: '',
     apellidos: '',
@@ -16,81 +18,124 @@ export default function Register() {
     confirmPassword: ''
   });
 
+  // Estados del CAPTCHA: deben estar dentro del componente,
+  // pero fuera de handleSubmit.
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaKey, setCaptchaKey] = useState(0);
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData({ ...formData, [e.target.id]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.id]: e.target.value
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // 1. Validaciones básicas de interfaz
+
+    // 1. Validar contraseñas
     if (formData.password !== formData.confirmPassword) {
-      alert("Las contraseñas no coinciden");
+      alert('Las contraseñas no coinciden');
       return;
     }
 
-    // 2. Mapeo de datos: Ajustamos el formato para Postgres
-    // Separamos los apellidos por si el usuario metió paterno y materno
+    // 2. Validar CAPTCHA
+    if (!captchaToken) {
+      alert('Por favor, completa la verificación CAPTCHA.');
+      return;
+    }
+
+    // 3. Separar apellidos
     const listaApellidos = formData.apellidos.trim().split(' ');
     const ap_pat = listaApellidos[0] || '';
-    const ap_mat = listaApellidos.slice(1).join(' ') || null; // Si hay segundo apellido, va aquí
+    const ap_mat = listaApellidos.slice(1).join(' ') || null;
 
+    // 4. Preparar datos para NestJS
     const datosParaBackend = {
       nombres: formData.nombres,
-      ap_pat: ap_pat,
-      ap_mat: ap_mat,
+      ap_pat,
+      ap_mat,
       cel: formData.telefono,
       correo: formData.email,
-      genero: 'Otro', // Valor por defecto del enum ["M", "F", "Otro"] si no hay selector
+      genero: 'Otro',
       contrasenia: formData.password,
-      tipo_usuario: 'CLIENTE', // ◄ Forzamos que sea Cliente
-      
-      // Atributos obligatorios en tu Postgres para la herencia de clientes
-      nro_cuenta: '000000',                     
-      direccion: 'Por definir en sucursal', 
-      nit: '0'                                  
+      tipo_usuario: 'CLIENTE',
+      nro_cuenta: '000000',
+      direccion: 'Por definir en sucursal',
+      nit: '0'
     };
 
-    // 3. Petición HTTP al backend NestJS
+    // 5. Enviar registro
     try {
-      const response = await api.post('/auth/registro', datosParaBackend);
-      
-      // Si el backend responde con éxito
-      alert(`${response.data.mensaje} - Tu ID asignado es: ${response.data.id_usuario}`);
-      
+      const response = await api.post('/auth/registro', {
+        ...datosParaBackend,
+        captchaToken
+      });
+
+      alert(
+        `${response.data.mensaje || 'Registro exitoso'} - Tu ID asignado es: ${response.data.id_usuario || ''}`
+      );
+
+      // Limpiar CAPTCHA antes de salir
+      setCaptchaToken('');
+
       // Redireccionar al login
       navigate('/login');
-      
+
     } catch (error: any) {
       console.error('Error al registrar cliente:', error);
-      
-      // Capturamos mensajes de error específicos enviados por NestJS (Ej: Correo duplicado)
-      const mensajeError = error.response?.data?.message || 'Hubo un problema con el servidor.';
-      alert(`Error en el registro: ${mensajeError}`);
+
+      const mensajeError = error.response?.data?.message
+        || 'Hubo un problema con el servidor.';
+
+      alert(
+        `Error en el registro: ${
+          Array.isArray(mensajeError)
+            ? mensajeError.join('\n')
+            : mensajeError
+        }`
+      );
+
+      // Reiniciar CAPTCHA cuando falle el registro
+      setCaptchaToken('');
+      setCaptchaKey(prev => prev + 1);
     }
   };
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative bg-[#f8fbfa] overflow-x-hidden selection:bg-primary-container selection:text-white">
-      
+
       {/* Patrón de puntos de fondo */}
-      <div className="absolute inset-0 z-0 opacity-[0.15]" style={{ backgroundImage: 'radial-gradient(var(--color-primary) 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }}></div>
+      <div
+        className="absolute inset-0 z-0 opacity-[0.15]"
+        style={{
+          backgroundImage: 'radial-gradient(var(--color-primary) 1.5px, transparent 1.5px)',
+          backgroundSize: '30px 30px'
+        }}
+      ></div>
 
       <main className="bg-white w-full max-w-[650px] rounded-[2rem] shadow-ambient border border-outline-variant/20 p-8 sm:p-12 relative overflow-hidden z-10 my-8">
-        
+
         {/* Formas decorativas */}
         <div className="absolute -top-20 -right-20 w-56 h-56 bg-surface-container rounded-full -z-10 opacity-60"></div>
         <div className="absolute -bottom-20 -left-20 w-56 h-56 bg-surface-container rounded-full -z-10 opacity-60"></div>
 
         <header className="flex flex-col items-center justify-center mb-8 text-center">
-          <img src={logoVetCare2} alt="VetCare Logo" className="h-14 object-contain rounded-xl mb-4 shadow-sm" />
-          <h2 className="font-display text-2xl font-bold text-primary tracking-wide">VetCare</h2>
+          <img
+            src={logoVetCare2}
+            alt="VetCare Logo"
+            className="h-14 object-contain rounded-xl mb-4 shadow-sm"
+          />
+          <h2 className="font-display text-2xl font-bold text-primary tracking-wide">
+            VetCare
+          </h2>
           <p className="font-body text-[11px] font-bold text-on-surface-variant tracking-widest uppercase mt-0.5">
             SPA PAWS & PALMS
           </p>
         </header>
 
         <form className="space-y-6" onSubmit={handleSubmit}>
+
           <div className="text-center mb-8">
             <h1 className="font-display text-3xl font-bold text-primary tracking-wide inline-block relative">
               Registro de Nuevo Usuario
@@ -98,10 +143,10 @@ export default function Register() {
             </h1>
           </div>
 
-          {/* Fila 1: Nombres y Apellidos */}
+          {/* Nombres y apellidos */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <InputField 
-              label="Nombre(s):" 
+            <InputField
+              label="Nombre(s):"
               icon="person"
               id="nombres"
               placeholder="Ej. María"
@@ -109,8 +154,9 @@ export default function Register() {
               onChange={handleChange}
               required
             />
-            <InputField 
-              label="Apellido(s):" 
+
+            <InputField
+              label="Apellido(s):"
               icon="person"
               id="apellidos"
               placeholder="Ej. Pérez"
@@ -120,9 +166,9 @@ export default function Register() {
             />
           </div>
 
-          {/* Fila 2: Correo */}
-          <InputField 
-            label="Correo Electrónico:" 
+          {/* Correo */}
+          <InputField
+            label="Correo Electrónico:"
             icon="mail"
             id="email"
             type="email"
@@ -131,8 +177,10 @@ export default function Register() {
             onChange={handleChange}
             required
           />
-          <InputField 
-            label="Teléfono Celular:" 
+
+          {/* Teléfono */}
+          <InputField
+            label="Teléfono Celular:"
             icon="call"
             id="telefono"
             type="tel"
@@ -142,10 +190,10 @@ export default function Register() {
             required
           />
 
-          {/* Fila 3: Contraseñas */}
+          {/* Contraseñas */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-            <InputField 
-              label="Contraseña:" 
+            <InputField
+              label="Contraseña:"
               icon="lock"
               id="password"
               placeholder="••••••••"
@@ -154,8 +202,9 @@ export default function Register() {
               required
               isPassword={true}
             />
-            <InputField 
-              label="Confirmar Contraseña:" 
+
+            <InputField
+              label="Confirmar Contraseña:"
               icon="lock_reset"
               id="confirmPassword"
               placeholder="••••••••"
@@ -166,19 +215,38 @@ export default function Register() {
             />
           </div>
 
-          {/* Botón de Registro */}
+          {/* CAPTCHA */}
+          <div className="pt-2">
+            <Captcha
+              resetKey={captchaKey}
+              onVerify={setCaptchaToken}
+            />
+          </div>
+
+          {/* Botón de registro */}
           <div className="pt-6 relative">
             <div className="absolute inset-x-0 bottom-0 top-6 border-2 border-dashed border-outline-variant/60 rounded-xl pointer-events-none -m-1.5"></div>
-            <Button variant="action" fullWidth type="submit" className="relative z-10 py-4 text-[20px] shadow-none">
+
+            <Button
+              variant="action"
+              fullWidth
+              type="submit"
+              disabled={!captchaToken}
+              className="relative z-10 py-4 text-[20px] shadow-none"
+            >
               REGISTRAR
             </Button>
           </div>
+
         </form>
 
         <div className="mt-8 text-center border-t border-outline-variant/20 pt-6">
           <p className="font-body text-[15px] text-on-surface-variant">
             ¿Ya tienes una cuenta?{' '}
-            <Link to="/login" className="font-display text-[15px] font-bold text-primary hover:underline ml-1 transition-all">
+            <Link
+              to="/login"
+              className="font-display text-[15px] font-bold text-primary hover:underline ml-1 transition-all"
+            >
               Inicia sesión aquí
             </Link>
           </p>

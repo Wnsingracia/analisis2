@@ -14,6 +14,7 @@ interface CitaTratamiento {
   descripcion: string | null;
   costo: string | number | null;
   id_mascota: string | null;
+  mascota_nombre?: string | null;
   id_cliente: string | null;
   id_recepcionista: string | null;
   // GET /citas no los devuelve (son datos clínicos); quedan opcionales para que la tabla compile
@@ -373,7 +374,7 @@ const [nuevoCliente, setNuevoCliente] = useState(nuevoClienteVacio);
                       </td>
 
                       <td className="py-4 px-6 font-body text-xs text-on-surface-variant">
-                        <p className="mb-1">Paciente: <span className="font-bold text-primary">#{app.id_mascota}</span></p>
+                        <p className="mb-1">Paciente:{' '}<span className="font-bold text-primary">{app.mascota_nombre || `#${app.id_mascota}`}</span></p>
                         <p className="mb-1">Dueño: <span className="font-bold text-on-surface">#{app.id_cliente}</span></p>
                         <p>Atendió: <span className="font-bold text-outline">#{app.id_recepcionista}</span></p>
                       </td>

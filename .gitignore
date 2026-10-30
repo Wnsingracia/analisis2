@@ -1,0 +1,19 @@
+
+# Dependencias de Node.js
+node_modules/
+
+# Variables de entorno
+.env
+.env.*
+
+# Permitir plantillas de variables de entorno
+!.env.example
+
+# Archivos generados
+dist/
+build/
+coverage/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*

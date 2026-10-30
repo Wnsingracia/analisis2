@@ -95,21 +95,29 @@ export default function ClientDashboard() {
               <span className="material-icons text-sm">badge</span> Datos de Cuenta
             </h3>
             <p className="font-body text-xs text-on-surface-variant">Código Cliente: <strong className="text-black">{usuario.id_usuario}</strong></p>
-            <p className="font-body text-xs text-on-surface-variant mt-1">Nro. de Cuenta Vet: <strong className="text-black">{perfil.nro_cuenta || 'No asignado'}</strong></p>
             <p className="font-body text-xs text-on-surface-variant mt-1">Correo: <strong className="text-black">{perfil.usuario?.correo}</strong></p>
           </div>
 
-          {/* Tarjeta 2: Atajos rápidos (Simulado) */}
+          {/* Tarjeta 2: Atajos rápidos */}
           <div className="bg-white p-6 rounded-2xl border border-outline-variant/40 shadow-sm col-span-2">
-            <h3 className="font-display font-bold text-primary mb-4">¿Qué deseas hacer hoy?</h3>
+            <h3 className="font-display font-bold text-primary mb-4">
+              ¿Qué deseas hacer hoy?
+            </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div className="p-3 bg-surface-container rounded-xl cursor-pointer hover:bg-primary-container/20 transition-colors">
-                <p className="font-display font-bold text-xs text-primary">🐾 Mis Mascotas</p>
-                <p className="text-[11px] text-on-surface-variant">Revisa el historial clínico de tus peluditos.</p>
-              </div>
+              {/* Mis Mascotas */}
+              <button
+                type="button"
+                onClick={() => navigate('/cliente/mascotas')}
+                className="p-3 bg-surface-container rounded-xl cursor-pointer hover:bg-primary-container/20 transition-colors text-left w-full">
+                <p className="font-display font-bold text-xs text-primary">
+                  🐾 Mis Mascotas
+                </p>
+                <p className="text-[11px] text-on-surface-variant">
+                  Revisa el historial clínico de tus peluditos.
+                </p>
+              </button>
             </div>
           </div>
-
         </section>
 
       </main>

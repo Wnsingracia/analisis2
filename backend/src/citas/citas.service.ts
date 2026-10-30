@@ -50,39 +50,67 @@ export class CitasService {
    * - VETERINARIO: todas las citas, pero solo ve consultas/tratamientos propios.
    * - CLIENTE: solo sus citas.
    */
+    
   async agenda(user: JwtPayload) {
-  const rol = rolDe(user);
-  const id = idDe(user);
+    const rol = rolDe(user);
+    const id = idDe(user);
 
-  const joinConsulta =
-    rol === 'VETERINARIO'
-      ? 'LEFT JOIN consultas cm ON c.id_cita = cm.id_cita AND cm.id_veterinario = $1'
-      : 'LEFT JOIN consultas cm ON c.id_cita = cm.id_cita';
-  const filtro = rol === 'CLIENTE' ? 'WHERE c.id_cliente = $1' : '';
+    const joinConsulta =
+      rol === 'VETERINARIO'
+        ? `LEFT JOIN consultas cm
+            ON c.id_cita = cm.id_cita
+            AND cm.id_veterinario = $1`
+        : `LEFT JOIN consultas cm
+            ON c.id_cita = cm.id_cita`;
 
-  // Solo hay $1 en la consulta para VETERINARIO y CLIENTE
-  const params = rol === 'VETERINARIO' || rol === 'CLIENTE' ? [id] : [];
+    const filtro =
+      rol === 'CLIENTE' ? 'WHERE c.id_cliente = $1' : '';
 
-  try {
-    return await this.dataSource.query(
-      `SELECT c.id_cita, c.fecha, c.hora, c.tipo,
-              c.descripcion AS cita_descripcion, c.costo,
-              c.id_mascota, c.id_cliente, c.id_recepcionista,
-              t.id_tratamiento,
-              t.descripcion AS tratamiento_descripcion,
-              t.fecha_emision
-         FROM citas c
-         ${joinConsulta}
-         LEFT JOIN tratamientos t ON cm.id_cons_medica = t.id_cons_medica
-         ${filtro}
-        ORDER BY c.fecha DESC, c.hora DESC`,
+    const params =
+      rol === 'VETERINARIO' || rol === 'CLIENTE' ? [id] : [];
+
+    try {
+      return await this.dataSource.query(
+      `SELECT
+          c.id_cita,
+          c.fecha,
+          c.hora,
+          c.tipo,
+          c.descripcion AS descripcion,
+          c.costo,
+          c.id_mascota,
+          m.nombre AS mascota_nombre,
+          c.id_cliente,
+          c.id_recepcionista,
+          t.id_tratamiento,
+          t.descripcion AS tratamiento_descripcion,
+          t.fecha_emision
+      FROM citas c
+
+      LEFT JOIN mascotas m
+        ON c.id_mascota = m.id_mascota
+        AND c.id_cliente = m.id_cliente
+
+      ${joinConsulta}
+
+      LEFT JOIN tratamientos t
+        ON cm.id_cons_medica = t.id_cons_medica
+
+      ${filtro}
+
+      ORDER BY c.fecha DESC, c.hora DESC`,
       params,
     );
-  } catch (error) {
-    this.logger.error('Error al obtener la agenda', (error as Error)?.stack);
-    throw new BadRequestException('No se pudo obtener la agenda.');
+    } catch (error) {
+      this.logger.error(
+        'Error al obtener la agenda',
+        (error as Error)?.stack,
+      );
+
+      throw new BadRequestException('No se pudo obtener la agenda.');
+    }
   }
-}
+
 
   async crear(dto: CreateCitaDto, user: JwtPayload) {
     // Un recepcionista siempre queda registrado como quien creó la cita
@@ -135,13 +163,24 @@ export class CitasService {
   }
 
   // La mascota de una cita debe pertenecer al cliente de esa cita
-  private async validarMascotaDeCliente(id_mascota?: string, id_cliente?: string) {
-    if (!id_mascota || !id_cliente) return;
+  private async validarMascotaDeCliente(id_mascota?: string,id_cliente?: string,) {
+    if (!id_mascota || !id_cliente) {
+      throw new BadRequestException(
+        'El id_mascota y el id_cliente son obligatorios.',
+      );
+    }
+
     const mascota = await this.mascotaRepo.findOne({
-      where: { id_mascota, id_cliente },
+      where: {
+        id_mascota,
+        id_cliente,
+      },
     });
+
     if (!mascota) {
-      throw new BadRequestException('La mascota no pertenece al cliente indicado.');
+      throw new BadRequestException(
+        'La mascota no pertenece al cliente indicado.',
+      );
     }
   }
 }

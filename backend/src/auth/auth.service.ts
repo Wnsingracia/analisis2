@@ -14,6 +14,7 @@ import * as crypto from 'crypto';
 import * as nodemailer from 'nodemailer';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { AuditoriaService } from '../auditoria/auditoria.service';
+import { TurnstileService } from './turnstile.service';
 
 const MAX_INTENTOS_FALLIDOS = 5;
 const MINUTOS_BLOQUEO = 15;
@@ -31,6 +32,7 @@ export class AuthService {
     private readonly usuarioRepo: Repository<Usuario>,
     private readonly jwtService: JwtService,
     private readonly auditoria: AuditoriaService,
+    private readonly turnstileService: TurnstileService
   ) {
     this.transporter = nodemailer.createTransport({
       host: 'smtp.resend.com',
@@ -51,12 +53,17 @@ export class AuthService {
 
   // ---------- Login ----------
 
-  async login(credenciales: { correo: string; contrasenia: string }) {
-    const { correo, contrasenia } = credenciales ?? {};
+  async login(credenciales: {correo: string;contrasenia: string;captchaToken: string;}) {
+    const {correo,contrasenia,captchaToken} = credenciales ?? {};
 
-    // Evita que findOne({ correo: undefined }) devuelva un usuario cualquiera
+    // 1. Verificar CAPTCHA antes de consultar la base de datos
+    await this.turnstileService.verificarCaptcha(captchaToken);
+
+    // 2. Validar campos obligatorios
     if (!correo || !contrasenia) {
-      throw new BadRequestException('Correo y contraseña son obligatorios');
+      throw new BadRequestException(
+        'Correo y contraseña son obligatorios'
+      );
     }
 
     const usuario = await this.usuarioRepo.findOne({ where: { correo } });
