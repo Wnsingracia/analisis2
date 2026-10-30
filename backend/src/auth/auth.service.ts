@@ -3,7 +3,6 @@ import {
   BadRequestException,
   UnauthorizedException,
   ForbiddenException,
-  InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -14,12 +13,25 @@ import * as crypto from 'crypto';
 import * as nodemailer from 'nodemailer';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { AuditoriaService } from '../auditoria/auditoria.service';
+import {
+  BCRYPT_ROUNDS,
+  HASH_FALSO,
+  MENSAJE_POLITICA,
+  cumplePolitica,
+} from '../common/contrasenia';
+import {
+  MINUTOS_SESION_EMERGENCIA,
+  emergenciaVencida,
+  expirarEmergencia,
+} from '../common/emergencia';
 
 const MAX_INTENTOS_FALLIDOS = 5;
 const MINUTOS_BLOQUEO = 15;
 const MINUTOS_VALIDEZ_TOKEN = 15;
-const SALT_ROUNDS = 10;
-const LONGITUD_MIN_CONTRASENIA = 6;
+
+// Parte 2-f: UN solo mensaje para correo inexistente, contraseña errónea y cuenta
+// bloqueada. Así nadie puede averiguar qué correos tienen cuenta.
+const MENSAJE_LOGIN = 'Correo o contraseña incorrectos, o cuenta bloqueada temporalmente.';
 
 @Injectable()
 export class AuthService {
@@ -49,6 +61,15 @@ export class AuthService {
     return crypto.createHash('sha256').update(token).digest('hex');
   }
 
+  // bcrypt.compare puede lanzar con un hash mal formado: se trata como "no coincide"
+  private async comparar(clave: string, hash: string): Promise<boolean> {
+    try {
+      return await bcrypt.compare(clave, hash);
+    } catch {
+      return false;
+    }
+  }
+
   // ---------- Login ----------
 
   async login(credenciales: { correo: string; contrasenia: string }) {
@@ -61,92 +82,166 @@ export class AuthService {
 
     const usuario = await this.usuarioRepo.findOne({ where: { correo } });
 
-    if (!usuario || !usuario.contrasenia) {
-      throw new UnauthorizedException('Correo o contraseña incorrectos');
-    }
+    const bloqueada =
+      !!usuario?.bloqueado_hasta && new Date(usuario.bloqueado_hasta) > new Date();
+    const puedeComparar = !!usuario && !!usuario.contrasenia && !bloqueada;
 
-    // 1. Verificar si la cuenta está bloqueada
-    if (usuario.bloqueado_hasta) {
-      const hasta = new Date(usuario.bloqueado_hasta);
-      if (hasta > new Date()) {
-        const minutosRestantes = Math.ceil(
-          (hasta.getTime() - Date.now()) / 60000,
-        );
-        throw new ForbiddenException(
-          `Cuenta bloqueada temporalmente. Intenta de nuevo en ${minutosRestantes} minuto(s).`,
-        );
-      }
-    }
-
-    
-    // 2. Validar contraseña
-    const contraseniaEsValida = await bcrypt.compare(
+    // Siempre se ejecuta UN bcrypt.compare (contra el hash real o uno descartable):
+    // el tiempo de respuesta no revela si el correo existe ni si está bloqueado.
+    const contraseniaEsValida = await this.comparar(
       contrasenia,
-      usuario.contrasenia,
+      puedeComparar ? (usuario!.contrasenia as string) : HASH_FALSO,
     );
+
+    if (!puedeComparar) {
+      await this.auditoria.registrar({
+        evento: 'LOGIN_FALLIDO',
+        recurso: usuario ? `usuarios/${usuario.id_usuario}` : null as any,
+        resultado: 'DENEGADO',
+        id_usuario: usuario?.id_usuario ?? null,
+        rol: usuario?.tipo_usuario ?? null,
+        detalle: { motivo: !usuario ? 'correo_desconocido' : bloqueada ? 'cuenta_bloqueada' : 'sin_contrasenia', correo_intentado: correo },
+      });
+      throw new UnauthorizedException(MENSAJE_LOGIN);
+    }
 
     if (!contraseniaEsValida) {
       // Number() por seguridad: pg devuelve int8 como string
-      const intentos = Number(usuario.intentos_fallidos ?? 0) + 1;
+      const intentos = Number(usuario!.intentos_fallidos ?? 0) + 1;
+      const bloquear = intentos >= MAX_INTENTOS_FALLIDOS;
 
-      if (intentos >= MAX_INTENTOS_FALLIDOS) {
-        const bloqueadoHasta = new Date(
-          Date.now() + MINUTOS_BLOQUEO * 60 * 1000,
-        );
-        await this.usuarioRepo.update(usuario.id_usuario, {
+      if (bloquear) {
+        await this.usuarioRepo.update(usuario!.id_usuario, {
           intentos_fallidos: 0,
-          bloqueado_hasta: bloqueadoHasta.toISOString(),
+          bloqueado_hasta: new Date(Date.now() + MINUTOS_BLOQUEO * 60 * 1000).toISOString(),
         });
-        throw new ForbiddenException(
-          `Demasiados intentos fallidos. Cuenta bloqueada por ${MINUTOS_BLOQUEO} minutos.`,
-        );
+      } else {
+        await this.usuarioRepo.update(usuario!.id_usuario, { intentos_fallidos: intentos });
       }
 
-      await this.usuarioRepo.update(usuario.id_usuario, {
-        intentos_fallidos: intentos,
+      await this.auditoria.registrar({
+        evento: bloquear ? 'CUENTA_BLOQUEADA_INTENTOS' : 'LOGIN_FALLIDO',
+        recurso: `usuarios/${usuario!.id_usuario}`,
+        resultado: 'DENEGADO',
+        id_usuario: usuario!.id_usuario,
+        rol: usuario!.tipo_usuario,
+        detalle: { motivo: 'contrasenia_incorrecta', intentos },
       });
-      throw new UnauthorizedException('Correo o contraseña incorrectos');
+      throw new UnauthorizedException(MENSAJE_LOGIN);
     }
 
-    // 2b. Credenciales correctas, pero la identidad está desactivada.
-    //     Se comprueba DESPUÉS de la contraseña para no revelar a un tercero
-    //     que la cuenta existe o su estado.
-    if (usuario.estado !== 'ACTIVA') {
+    // Credenciales correctas, pero la identidad está desactivada (Parte 1-d).
+    // Se comprueba DESPUÉS de la contraseña para no revelar a un tercero el estado.
+    if (usuario!.estado !== 'ACTIVA') {
       await this.auditoria.registrar({
-        evento: 'LOGIN_RECHAZADO_IDENTIDAD_INACTIVA',
-        recurso: `usuarios/${usuario.id_usuario}`,
+        // Intentar usar la cuenta de emergencia mientras está en reposo es una alerta
+        evento: usuario!.es_emergencia
+          ? 'EMERGENCIA_INTENTO_EN_REPOSO'
+          : 'LOGIN_RECHAZADO_IDENTIDAD_INACTIVA',
+        recurso: `usuarios/${usuario!.id_usuario}`,
         resultado: 'DENEGADO',
-        id_usuario: usuario.id_usuario,
-        rol: usuario.tipo_usuario,
-        detalle: { estado: usuario.estado },
+        id_usuario: usuario!.id_usuario,
+        rol: usuario!.tipo_usuario,
+        detalle: { estado: usuario!.estado },
       });
       throw new ForbiddenException('Tu cuenta no está activa. Contacta al administrador.');
     }
 
-    // 3. Login correcto: limpiar contadores solo si hace falta
-    if (Number(usuario.intentos_fallidos ?? 0) > 0 || usuario.bloqueado_hasta) {
-      await this.usuarioRepo.update(usuario.id_usuario, {
-        intentos_fallidos: 0,
-        bloqueado_hasta: null,
+    // Cuenta de emergencia activa: su ventana puede haber vencido; si no, queda el rastro de su uso
+    if (usuario!.es_emergencia) {
+      if (emergenciaVencida(usuario!)) {
+        await expirarEmergencia(this.usuarioRepo, this.auditoria, usuario!.id_usuario);
+        throw new ForbiddenException('La ventana de la cuenta de emergencia terminó. Solicita una nueva activación.');
+      }
+      this.logger.warn(`CUENTA DE EMERGENCIA en uso: usuario ${usuario!.id_usuario}`);
+      await this.auditoria.registrar({
+        evento: 'EMERGENCIA_LOGIN',
+        recurso: `usuarios/${usuario!.id_usuario}`,
+        id_usuario: usuario!.id_usuario,
+        rol: usuario!.tipo_usuario,
+        detalle: { motivo_activacion: usuario!.motivo_estado, sesion_minutos: MINUTOS_SESION_EMERGENCIA },
       });
     }
 
+    // Login correcto: limpiar contadores y, si el hash se creó con menos rondas
+    // que las actuales (p. ej. cost 10), se vuelve a guardar con cost 12.
+    const cambios: Partial<Usuario> = {};
+    if (Number(usuario!.intentos_fallidos ?? 0) > 0 || usuario!.bloqueado_hasta) {
+      cambios.intentos_fallidos = 0;
+      cambios.bloqueado_hasta = null;
+    }
+    try {
+      if (bcrypt.getRounds(usuario!.contrasenia) < BCRYPT_ROUNDS) {
+        cambios.contrasenia = await bcrypt.hash(contrasenia, BCRYPT_ROUNDS);
+      }
+    } catch {
+      /* hash con formato inesperado: se deja como está */
+    }
+    if (Object.keys(cambios).length > 0) {
+      await this.usuarioRepo.update(usuario!.id_usuario, cambios);
+    }
+
+    await this.auditoria.registrar({
+      evento: 'LOGIN_OK',
+      recurso: `usuarios/${usuario!.id_usuario}`,
+      id_usuario: usuario!.id_usuario,
+      rol: usuario!.tipo_usuario,
+    });
+
     const payload = {
-      id_usuario: usuario.id_usuario,
-      tipo_usuario: usuario.tipo_usuario,
-      correo: usuario.correo,
+      id_usuario: usuario!.id_usuario,
+      tipo_usuario: usuario!.tipo_usuario,
+      correo: usuario!.correo,
+      tv: Number(usuario!.token_version ?? 0), // versión para poder revocar sesiones
     };
 
+    // Las sesiones de la cuenta de emergencia duran poco
+    const esEmergencia = !!usuario!.es_emergencia;
     return {
       mensaje: 'Inicio de sesión correcto',
-      accessToken: this.jwtService.sign(payload),
+      accessToken: this.jwtService.sign(
+        payload,
+        esEmergencia ? { expiresIn: `${MINUTOS_SESION_EMERGENCIA}m` } : undefined,
+      ),
+      expiraEnMs: (esEmergencia ? MINUTOS_SESION_EMERGENCIA : 8 * 60) * 60 * 1000,
       usuario: {
-        id_usuario: usuario.id_usuario,
-        nombres: usuario.nombres,
-        ap_pat: usuario.ap_pat,
-        tipo_usuario: usuario.tipo_usuario,
+        id_usuario: usuario!.id_usuario,
+        nombres: usuario!.nombres,
+        ap_pat: usuario!.ap_pat,
+        tipo_usuario: usuario!.tipo_usuario,
       },
     };
+  }
+
+  /**
+   * Parte 2-d: cerrar sesión de verdad. No basta con borrar la cookie: se sube
+   * token_version, así que el token (aunque alguien lo hubiera copiado) deja de valer.
+   * Efecto: se cierran las sesiones de esa cuenta en todos los dispositivos.
+   */
+  async cerrarSesion(token?: string) {
+    if (!token) return;
+    try {
+      const p = await this.jwtService.verifyAsync<{ id_usuario: string; tipo_usuario?: string; tv?: number }>(
+        token,
+        { algorithms: ['HS256'] },
+      );
+      const res = await this.usuarioRepo
+        .createQueryBuilder()
+        .update(Usuario)
+        .set({ token_version: () => 'token_version + 1' })
+        .where('id_usuario = :id AND token_version = :tv', { id: p.id_usuario, tv: Number(p.tv ?? 0) })
+        .execute();
+      if (res.affected) {
+        await this.auditoria.registrar({
+          evento: 'LOGOUT',
+          recurso: `usuarios/${p.id_usuario}`,
+          id_usuario: p.id_usuario,
+          rol: p.tipo_usuario ?? null,
+        });
+      }
+    } catch {
+      /* token inválido o vencido: solo se borra la cookie */
+    }
   }
 
   // ---------- Recuperación de contraseña ----------
@@ -184,6 +279,14 @@ export class AuthService {
       reset_token_expira: expira.toISOString(),
     });
 
+    // El correo se envía SIN esperar y los fallos solo se registran: así ni el tiempo
+    // de respuesta ni un error 500 delatan que el correo tiene cuenta (Parte 2-f).
+    void this.enviarCorreoRecuperacion(correo, token, usuario.id_usuario);
+
+    return respuestaGenerica;
+  }
+
+  private async enviarCorreoRecuperacion(correo: string, token: string, idUsuario: string) {
     const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
     const enlaceRecuperacion = `${frontendUrl}/reset-password?token=${token}`;
 
@@ -205,19 +308,11 @@ export class AuthService {
           </div>
         `,
       });
-
-      return respuestaGenerica;
     } catch (error) {
       this.logger.error('Error enviando correo de recuperación', error as Error);
-
-      await this.usuarioRepo.update(usuario.id_usuario, {
-        reset_token: null,
-        reset_token_expira: null,
-      });
-
-      throw new InternalServerErrorException(
-        'No se pudo enviar el correo de recuperación.',
-      );
+      await this.usuarioRepo
+        .update(idUsuario, { reset_token: null, reset_token_expira: null })
+        .catch(() => undefined);
     }
   }
 
@@ -227,13 +322,8 @@ export class AuthService {
       throw new BadRequestException('El token de recuperación es obligatorio.');
     }
 
-    if (
-      !nuevaContrasenia ||
-      nuevaContrasenia.length < LONGITUD_MIN_CONTRASENIA
-    ) {
-      throw new BadRequestException(
-        `La contraseña debe tener por lo menos ${LONGITUD_MIN_CONTRASENIA} caracteres.`,
-      );
+    if (!cumplePolitica(nuevaContrasenia)) {
+      throw new BadRequestException(MENSAJE_POLITICA);
     }
 
     const usuario = await this.usuarioRepo.findOne({
@@ -255,10 +345,7 @@ export class AuthService {
       );
     }
 
-    const contraseniaHasheada = await bcrypt.hash(
-      nuevaContrasenia,
-      SALT_ROUNDS,
-    );
+    const contraseniaHasheada = await bcrypt.hash(nuevaContrasenia, BCRYPT_ROUNDS);
 
     await this.usuarioRepo.update(usuario.id_usuario, {
       contrasenia: contraseniaHasheada,
@@ -266,6 +353,15 @@ export class AuthService {
       reset_token_expira: null,
       intentos_fallidos: 0,
       bloqueado_hasta: null,
+      // Cambiar la clave cierra las sesiones abiertas con la anterior
+      token_version: () => 'token_version + 1',
+    } as any);
+
+    await this.auditoria.registrar({
+      evento: 'CONTRASENIA_RESTABLECIDA',
+      recurso: `usuarios/${usuario.id_usuario}`,
+      id_usuario: usuario.id_usuario,
+      rol: usuario.tipo_usuario,
     });
 
     return { mensaje: 'Tu contraseña ha sido actualizada con éxito.' };

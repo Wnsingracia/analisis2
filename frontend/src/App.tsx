@@ -20,6 +20,7 @@ import Contacto from './pages/public/Contacto';
 import NotFound from './pages/public/NotFound';
 
 // Layout de Admin y vistas de Admin
+import Seguridad from './pages/admin/Seguridad';
 import { AdminLayout } from './components/layout/AdminLayout'; 
 import { RecepcionistaLayout } from './components/layout/RecepcionistaLayout'; 
 import { ClienteLayout } from './components/layout/ClienteLayout';
@@ -73,6 +74,8 @@ function App() {
           <Route path="inventory" element={<Inventory />} />
           <Route path="appointments" element={<Appointments />} />
           <Route path="clinical-history/:idMascota"element={<ClinicalHistory />}/>
+          <Route path="identidades" element={<Identidades />} />
+          <Route path="seguridad" element={<Seguridad />} />
         </Route>
 
         {/* ENTORNO DEL CLIENTE*/}

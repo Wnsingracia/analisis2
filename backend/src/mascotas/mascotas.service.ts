@@ -21,7 +21,23 @@ export class MascotasService {
     private readonly repo: Repository<Mascota>,
   ) {}
 
-  /** CLIENTE: solo las suyas. Staff: todas, o las de un cliente con ?id_cliente= */
+  // Citas de estética: el contexto que justifica que un estilista vea una mascota
+  private static readonly CON_CITA_ESTETICA =
+    "m.id_mascota IN (SELECT c.id_mascota FROM citas c WHERE COALESCE(c.tipo, '') ILIKE 'Est%')";
+
+  private async esPacienteDe(idMascota: string, idVeterinario: string): Promise<boolean> {
+    const filas = await this.repo.manager.query(
+      `SELECT 1 FROM consultas WHERE "idMascota" = $1 AND id_veterinario = $2 LIMIT 1`,
+      [idMascota, idVeterinario],
+    );
+    return filas.length > 0;
+  }
+
+  /**
+   * CLIENTE: solo las suyas. ESTILISTA: solo las que tienen una cita de estética.
+   * ADMIN, RECEPCIONISTA y VETERINARIO: todas (el veterinario necesita localizar al paciente
+   * antes de su primera consulta), o las de un cliente con ?id_cliente=
+   */
   listar(user: JwtPayload, idCliente?: string) {
     let filtro: string | undefined;
 
@@ -34,13 +50,11 @@ export class MascotasService {
       filtro = idCliente;
     }
 
-    return this.repo.find({
-      where: filtro ? { id_cliente: filtro } : {},
-      order: { id_mascota: 'ASC' },
-    });
+    const qb = this.repo.createQueryBuilder('m').orderBy('m.id_mascota', 'ASC');
+    if (filtro) qb.andWhere('m.id_cliente = :filtro', { filtro });
+    if (rolDe(user) === 'ESTILISTA') qb.andWhere(MascotasService.CON_CITA_ESTETICA);
+    return qb.getMany();
   }
-
-  
 
   async obtener(id: string, user: JwtPayload) {
     const mascota = await this.repo.findOne({ where: { id_mascota: id } });
@@ -51,6 +65,15 @@ export class MascotasService {
       (rolDe(user) === 'CLIENTE' && mascota.id_cliente !== idDe(user))
     ) {
       throw new NotFoundException('Mascota no encontrada.');
+    }
+
+    // El estilista solo accede a mascotas con una cita de estética
+    if (rolDe(user) === 'ESTILISTA') {
+      const filas = await this.repo.manager.query(
+        `SELECT 1 FROM citas WHERE id_mascota = $1 AND COALESCE(tipo, '') ILIKE 'Est%' LIMIT 1`,
+        [id],
+      );
+      if (!filas.length) throw new NotFoundException('Mascota no encontrada.');
     }
     return mascota;
   }
@@ -72,7 +95,16 @@ export class MascotasService {
   async actualizar(id: string, dto: UpdateMascotaDto, user: JwtPayload) {
     await this.obtener(id, user); // 404 si no existe o es ajena
 
+    // Un veterinario solo modifica a sus pacientes (mascotas que ha atendido)
+    if (rolDe(user) === 'VETERINARIO' && !(await this.esPacienteDe(id, idDe(user)))) {
+      throw new NotFoundException('Mascota no encontrada.');
+    }
+
     const cambios = sinUndefined({ ...dto });
+    // Solo gestión puede traspasar una mascota a otro dueño
+    if (rolDe(user) !== 'ADMIN' && rolDe(user) !== 'RECEPCIONISTA') {
+      delete (cambios as any).id_cliente;
+    }
     if (Object.keys(cambios).length === 0) {
       throw new BadRequestException('No hay campos válidos para actualizar.');
     }

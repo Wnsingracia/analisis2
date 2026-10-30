@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
@@ -160,7 +159,7 @@ export default function MisMascotas() {
             Aún no tienes mascotas registradas
           </h2>
 
-          <p className="mt-3 text-sm text-on-surface-variant max-w-md mx-auto">
+          <p>
             Cuando registres tus mascotas, podrás consultar aquí su información.
           </p>
         </div>

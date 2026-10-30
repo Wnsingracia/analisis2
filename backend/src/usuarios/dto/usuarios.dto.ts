@@ -10,6 +10,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { PoliticaContrasenia } from '../../common/contrasenia';
 
 export const TIPOS_USUARIO = [
   'ADMIN',
@@ -49,8 +50,7 @@ export class DatosPersonalesDto {
   genero?: string;
 
   @IsNotEmpty({ message: 'La contraseña no puede estar vacía' })
-  @IsString({ message: 'La contraseña debe ser texto' })
-  @Length(6, 255, { message: 'La contraseña debe tener por lo menos 6 caracteres' })
+  @PoliticaContrasenia()
   contrasenia!: string;
 
 }
@@ -94,8 +94,7 @@ export class UpdateUserDto {
   genero?: string;
 
   @IsOptional()
-  @IsString({ message: 'La contraseña debe ser texto' })
-  @Length(6, 255, { message: 'La contraseña debe tener por lo menos 6 caracteres' })
+  @PoliticaContrasenia()
   contrasenia?: string;
 }
 

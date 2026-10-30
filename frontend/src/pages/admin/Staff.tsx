@@ -119,20 +119,42 @@ export default function Staff() {
   };
 
   // ================= GUARDAR / ACTUALIZAR (POST / PUT) =================
+  // ================= GUARDAR / ACTUALIZAR (POST / PUT) =================
   const handleFormSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       if (isEditing) {
-        // Enviar modificaciones al endpoint de NestJS (Ej: PUT /usuarios/empleados/:id)
+        // Modificación de empleado existente
         await api.put(`/empleados/${selectedStaffId}`, formData);
         alert("Datos del empleado actualizados con éxito.");
       } else {
-        // Enviar nueva inserción por transacciones a Postgres
-        await api.post('/usuarios', formData);
-        alert(`Empleado [${formData.tipo_usuario}] registrado correctamente.`);
+        // Mapeo de la URL según el rol seleccionado en el formulario
+        const endpointPorRol: Record<string, string> = {
+          VETERINARIO: '/veterinarios',
+          ESTILISTA: '/estilistas',
+          RECEPCIONISTA: '/recepcionistas',
+          ADMIN: '/administradores',
+          CLIENTE: '/clientes',
+        };
+
+        const endpoint = endpointPorRol[formData.tipo_usuario];
+        if (!endpoint) {
+          throw new Error(`Tipo de usuario inválido: ${formData.tipo_usuario}`);
+        }
+
+        // Si el rol es ADMIN y no se llenó nvl_acceso, se asigna uno por defecto
+        const payload = {
+          ...formData,
+          ...(formData.tipo_usuario === 'ADMIN' && !formData.nvl_acceso
+            ? { nvl_acceso: 'TOTAL' }
+            : {}),
+        };
+
+        await api.post(endpoint, payload);
+        alert(`Usuario [${formData.tipo_usuario}] registrado correctamente.`);
       }
       setIsFormModalOpen(false);
-      cargarEmpleados(); // Recargamos la grilla con los datos frescos de la BD
+      cargarEmpleados();
     } catch (error: any) {
       console.error(error);
       alert(error.response?.data?.message || "Ocurrió un error al procesar el formulario.");

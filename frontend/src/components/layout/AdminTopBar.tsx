@@ -150,6 +150,9 @@ export const AdminTopBar: React.FC = () => {
           {/* MENÚ DESPLEGABLE DE PERFIL / ACCIONES */}
           {menuOpen && (
             <div className="absolute right-0 mt-2 w-52 bg-white border border-outline-variant/30 rounded-xl shadow-ambient overflow-hidden z-40 animate-in fade-in slide-in-from-top-1 duration-150">
+              <div className="px-4 py-2.5 border-b border-outline-variant/20 bg-surface-container-low">
+                <p className="font-body text-xs font-semibold text-on-surface-variant truncate">{admin?.correo}</p>
+              </div>
               <button 
                 onClick={handleCerrarSesion}
                 className="w-full text-left font-body text-sm text-error hover:bg-error-container/10 px-4 py-3 flex items-center gap-2 transition-colors font-bold"

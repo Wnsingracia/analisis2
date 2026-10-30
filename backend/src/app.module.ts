@@ -18,6 +18,7 @@ import { TratamientosModule } from './tratamientos/tratamientos.module';
 import { AuthModule } from './auth/auth.module';
 
 import { AuditoriaModule } from './auditoria/auditoria.module';
+import { SegundoFactorModule } from './segundo-factor/segundo-factor.module';
 
 @Module({
   imports: [
@@ -50,6 +51,7 @@ import { AuditoriaModule } from './auditoria/auditoria.module';
     }),
 
     AuditoriaModule,
+    SegundoFactorModule,
     UsuariosModule,
     VeterinariosModule,
     AdministradoresModule,

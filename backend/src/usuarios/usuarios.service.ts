@@ -28,6 +28,7 @@ import {
   EstadoCuenta,
 } from './dto/usuarios.dto';
 import { AuditoriaService } from '../auditoria/auditoria.service';
+import { BCRYPT_ROUNDS } from '../common/contrasenia';
 import { contextoActual } from '../common/contexto';
 import { Empleado } from '../empleados/entities/empleados.entity';
 import { Veterinario } from '../veterinarios/entities/veterinarios.entity';
@@ -35,7 +36,6 @@ import { Estilista } from '../estilistas/entities/estilistas.entity';
 import { Recepcionista } from '../recepcionistas/entities/recepcionistas.entity';
 import { Administradores } from '../administradores/entities/administradores.entity';
 
-const SALT_ROUNDS = 10;
 
 // Nunca incluir contrasenia, reset_token, reset_token_expira,
 // intentos_fallidos ni bloqueado_hasta
@@ -50,6 +50,7 @@ export const SELECT_PUBLICO: FindOptionsSelect<Usuario> = {
   tipo_usuario: true,
   fecha_creacion: true,
   estado: true,
+  es_emergencia: true,
 };
 
 // Para el listado de administración: además del estado, por qué y cuándo cambió
@@ -86,9 +87,10 @@ export class UsuariosService {
 
   // ---------- Consultas ----------
 
-  obtTodo() {
+  obtTodo(tipo?: string) {
     return this.usuarioRepo.find({
       select: SELECT_ADMIN_USUARIOS,
+      where: tipo ? { tipo_usuario: tipo } : {},
       order: { id_usuario: 'ASC' },
     });
   }
@@ -139,7 +141,7 @@ export class UsuariosService {
         ...dto,
         id_usuario: String(nuevo_id),
         cel: dto.cel ? Number(dto.cel) : null,
-        contrasenia: await bcrypt.hash(dto.contrasenia, SALT_ROUNDS),
+        contrasenia: await bcrypt.hash(dto.contrasenia, BCRYPT_ROUNDS),
         tipo_usuario,
       });
 
@@ -200,7 +202,9 @@ export class UsuariosService {
       cambios.cel = dto.cel ? Number(dto.cel) : null;
     }
     if (dto.contrasenia) {
-      cambios.contrasenia = await bcrypt.hash(dto.contrasenia, SALT_ROUNDS);
+      cambios.contrasenia = await bcrypt.hash(dto.contrasenia, BCRYPT_ROUNDS);
+      // Cambiar la contraseña invalida las sesiones abiertas con la clave anterior
+      (cambios as any).token_version = () => 'token_version + 1';
     }
 
     if (Object.keys(cambios).length === 0) {
@@ -218,7 +222,7 @@ export class UsuariosService {
         }
       }
 
-      await this.usuarioRepo.update(idUsuario, cambios);
+      await this.usuarioRepo.update(idUsuario, cambios as any);
       return this.obtUsuario(idUsuario);
     } catch (error: any) {
       if (error instanceof HttpException) throw error;
@@ -228,6 +232,22 @@ export class UsuariosService {
       this.logger.error('Error al actualizar usuario', error?.stack ?? error);
       throw new InternalServerErrorException('No se pudo actualizar el usuario.');
     }
+  }
+
+  // ---------- Sesiones ----------
+
+  /** Parte 2-d: invalida TODAS las sesiones abiertas de una cuenta (p. ej. cuenta comprometida). */
+  async revocarSesiones(id: string | number) {
+    const idUsuario = String(id);
+    const res = await this.usuarioRepo.update(idUsuario, {
+      token_version: () => 'token_version + 1',
+    } as any);
+    if (!res.affected) throw new NotFoundException('Usuario no encontrado.');
+    await this.auditoria.registrar({
+      evento: 'SESIONES_REVOCADAS',
+      recurso: `usuarios/${idUsuario}`,
+    });
+    return { mensaje: 'Se cerraron todas las sesiones de la cuenta.' };
   }
 
   // ---------- Ciclo de vida de la identidad ----------
@@ -283,6 +303,13 @@ export class UsuariosService {
           throw new NotFoundException('Usuario no encontrado.');
         }
 
+        // Activar la cuenta de emergencia debe justificarse con el incidente que la motiva
+        if (usuario.es_emergencia && estado === 'ACTIVA' && !motivoLimpio) {
+          throw new BadRequestException(
+            'Activar la cuenta de emergencia exige un motivo (el incidente que la justifica).',
+          );
+        }
+
         const anterior = usuario.estado;
         if (anterior === 'REVOCADA') {
           throw new ConflictException('Una identidad revocada no se puede modificar.');
@@ -296,13 +323,19 @@ export class UsuariosService {
 
         await repo.update(idUsuario, {
           estado,
-          motivo_estado: estado === 'ACTIVA' ? null : motivoLimpio,
+          motivo_estado: estado === 'ACTIVA' && !usuario.es_emergencia ? null : motivoLimpio,
           fecha_estado: new Date(),
         });
 
         await this.auditoria.registrar(
           {
-            evento: estado === 'REVOCADA' ? 'BAJA_IDENTIDAD' : 'CAMBIO_ESTADO',
+            evento: usuario.es_emergencia
+              ? estado === 'ACTIVA'
+                ? 'EMERGENCIA_ACTIVADA'
+                : 'EMERGENCIA_DESACTIVADA'
+              : estado === 'REVOCADA'
+                ? 'BAJA_IDENTIDAD'
+                : 'CAMBIO_ESTADO',
             recurso: `usuarios/${idUsuario}`,
             detalle: {
               estado_anterior: anterior,
@@ -421,10 +454,12 @@ export class UsuariosService {
   // Impide quedarse sin ningún administrador activo
   private async exigirOtroAdminActivo(manager: EntityManager, usuario: Usuario) {
     if (String(usuario.tipo_usuario).toUpperCase() !== 'ADMIN') return;
+    if (usuario.es_emergencia) return; // la cuenta de emergencia no cuenta como administrador ordinario
     const otros = await manager
       .createQueryBuilder(Usuario, 'u')
       .where("UPPER(u.tipo_usuario) = 'ADMIN'")
       .andWhere("u.estado = 'ACTIVA'")
+      .andWhere('u.es_emergencia = false')
       .andWhere('u.id_usuario <> :id', { id: usuario.id_usuario })
       .getCount();
     if (otros === 0) {

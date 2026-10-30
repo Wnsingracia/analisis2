@@ -49,6 +49,12 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({ onOpenGlobalAppointment 
             </Link>
           </li>
           <li>
+            <Link to="/admin/seguridad" className={`rounded-xl font-body text-sm font-semibold flex items-center px-4 py-3 mx-2 transition-all duration-200 ${isActive('/admin/seguridad') ? 'bg-primary-container text-white shadow-sm' : 'text-on-surface-variant hover:bg-surface-variant/50 hover:translate-x-1 hover:text-primary'}`}>
+              <span className={`material-symbols-outlined mr-3 ${isActive('/admin/seguridad') ? 'icon-fill' : ''}`}>shield_lock</span>
+              Seguridad
+            </Link>
+          </li>
+          <li>
             <Link to="/admin/identidades" className={`rounded-xl font-body text-sm font-semibold flex items-center px-4 py-3 mx-2 transition-all duration-200 ${isActive('/admin/identidades') ? 'bg-primary-container text-white shadow-sm' : 'text-on-surface-variant hover:bg-surface-variant/50 hover:translate-x-1 hover:text-primary'}`}>
               <span className={`material-symbols-outlined mr-3 ${isActive('/admin/identidades') ? 'icon-fill' : ''}`}>admin_panel_settings</span>
               Identidades

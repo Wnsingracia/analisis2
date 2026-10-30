@@ -56,7 +56,7 @@ export default function Register() {
       const response = await api.post('/auth/registro', datosParaBackend);
       
       // Si el backend responde con éxito
-      alert(`${response.data.mensaje} - Tu ID asignado es: ${response.data.id_usuario}`);
+      alert(response.data.mensaje);
       
       // Redireccionar al login
       navigate('/login');
