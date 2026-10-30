@@ -39,19 +39,22 @@ export class MascotasService {
       order: { id_mascota: 'ASC' },
     });
   }
-
-  
-
+   
   async obtener(id: string, user: JwtPayload) {
-    const mascota = await this.repo.findOne({ where: { id_mascota: id } });
+    const where: any = {
+      id_mascota: id,
+    };
 
-    // Si es de otro cliente se responde 404 (no 403) para no revelar que existe
-    if (
-      !mascota ||
-      (rolDe(user) === 'CLIENTE' && mascota.id_cliente !== idDe(user))
-    ) {
+    if (rolDe(user) === 'CLIENTE') {
+      where.id_cliente = idDe(user);
+    }
+
+    const mascota = await this.repo.findOne({ where });
+
+    if (!mascota) {
       throw new NotFoundException('Mascota no encontrada.');
     }
+
     return mascota;
   }
 
@@ -69,19 +72,30 @@ export class MascotasService {
     }
   }
 
-  async actualizar(id: string, dto: UpdateMascotaDto, user: JwtPayload) {
-    await this.obtener(id, user); // 404 si no existe o es ajena
+
+async actualizar(id: string,dto: UpdateMascotaDto,user: JwtPayload,) {
+    const mascota = await this.obtener(id, user);
 
     const cambios = sinUndefined({ ...dto });
+
     if (Object.keys(cambios).length === 0) {
-      throw new BadRequestException('No hay campos válidos para actualizar.');
+      throw new BadRequestException(
+        'No hay campos válidos para actualizar.',
+      );
     }
 
     try {
-      await this.repo.update({ id_mascota: id }, cambios);
+      await this.repo.update(
+        {
+          id_mascota: mascota.id_mascota,
+          id_cliente: mascota.id_cliente,
+        },
+        cambios,
+      );
     } catch (error) {
       lanzarErrorDb(error, this.logger, 'actualizar', 'la mascota');
     }
+
     return this.obtener(id, user);
   }
 

@@ -59,7 +59,7 @@ export class MascotasController {
   ) {
     return this.servicio.actualizar(String(id), dto, user);
   }
-
+  
   @Roles('ADMIN')
   @Delete(':id')
   eliminar(@Param('id', ParseIntPipe) id: number) {
