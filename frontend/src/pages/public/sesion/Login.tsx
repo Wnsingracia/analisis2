@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '../../../components/ui/Button';
 import { InputField } from '../../../components/ui/InputField';
 import api from '../../../services/api'; 
+import Captcha from '../../../components/seguridad/Captcha';
 
 import logoVetCare2 from '../../../assets/logo-VetCare2.jpeg';
 import { useAuth } from '../../../context/AuthContext';
@@ -13,6 +14,9 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
   const { setUsuario } = useAuth()
+  const [captchaToken, setCaptchaToken] = useState('');
+  const [captchaKey, setCaptchaKey] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
 
   // Fuera del componente: a qué pantalla va cada rol
   const RUTA_POR_ROL: Record<string, string> = {
@@ -24,39 +28,56 @@ export default function Login() {
   };
 
   // ◄ AQUÍ VA LA FUNCIÓN MODIFICADA QUE GESTIONA AMBAS CUENTAS
-  const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  
+const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
 
-  try {
-    // El backend responde con { mensaje, usuario } y deja el token en una cookie httpOnly
-    const { data } = await api.post('/auth/login', {
-      correo: email,
-      contrasenia: password,
-    });
+    if (isLoading) return;
 
-    const usuario = data.usuario;
-    const destino = RUTA_POR_ROL[usuario?.tipo_usuario];
-
-    if (!destino) {
-      alert('Tu tipo de usuario no tiene un panel asignado.');
+    if (!captchaToken) {
+      alert('Por favor, completa la verificación CAPTCHA.');
       return;
     }
 
-    // La sesión vive en memoria (AuthContext); nada se guarda en localStorage
-    setUsuario(usuario);
-    navigate(destino);
-  } catch (error: any) {
-    console.error('Error en el inicio de sesión:', error);
+    setIsLoading(true);
 
-    // Nest devuelve un array de mensajes cuando falla la validación del DTO
-    const msg = error.response?.data?.message;
-    const texto = Array.isArray(msg)
-      ? msg.join('\n')
-      : msg || 'Credenciales incorrectas o problemas de conexión.';
-    alert(`Error de ingreso: ${texto}`);
-  }
-};
+    try {
+      const { data } = await api.post('/auth/login', {
+        correo: email,
+        contrasenia: password,
+        captchaToken: captchaToken
+      });
 
+      const usuario = data.usuario;
+      const destino = RUTA_POR_ROL[usuario?.tipo_usuario];
+
+      if (!destino) {
+        alert('Tu tipo de usuario no tiene un panel asignado.');
+        return;
+      }
+
+      setUsuario(usuario);
+      navigate(destino);
+
+    } catch (error: any) {
+      console.error('Error en el inicio de sesión:', error);
+
+      const msg = error.response?.data?.message;
+
+      const texto = Array.isArray(msg)
+        ? msg.join('\n')
+        : msg || 'Credenciales incorrectas o problemas de conexión.';
+
+      alert(`Error de ingreso: ${texto}`);
+
+      setCaptchaToken('');
+      setCaptchaKey(prev => prev + 1);
+
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
   return (
     <div className="min-h-screen w-full flex items-center justify-center p-4 relative bg-[#f8fbfa] overflow-hidden">
       <div className="absolute inset-0 z-0 opacity-[0.15]" style={{ backgroundImage: 'radial-gradient(var(--color-primary) 1.5px, transparent 1.5px)', backgroundSize: '30px 30px' }}></div>
@@ -123,10 +144,24 @@ export default function Login() {
             </Link>
           </div>
 
+          <div className="pt-2">
+            <Captcha
+              resetKey={captchaKey}
+              onVerify={setCaptchaToken}
+            />
+          </div>
+
           <div className="pt-4 relative">
             <div className="absolute inset-x-0 bottom-0 top-4 border-2 border-dashed border-outline-variant/60 rounded-xl pointer-events-none -m-1.5"></div>
-            <Button variant="action" fullWidth type="submit" className="relative z-10 py-4 text-[20px] shadow-none">
-              INGRESAR
+            <Button variant="action" fullWidth type="submit" disabled={!captchaToken} className="relative z-10 py-4 text-[20px] shadow-none">
+              {isLoading ? (
+                <span className="flex items-center justify-center gap-3">
+                  <span className="h-5 w-5 rounded-full border-[3px] border-white/30 border-t-white animate-spin"></span>
+                  PROCESANDO...
+                </span>
+              ) : (
+                'INGRESAR'
+              )}
             </Button>
           </div>
         </form>
