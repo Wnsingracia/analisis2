@@ -18,6 +18,7 @@ import { JwtAuthGuard } from '../guards/JwtAuthGuard';
 import type { JwtPayload } from '../guards/JwtAuthGuard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../guards/roles.decorator';
+import { Requiere2FA } from '../guards/requiere2fa.decorator';
 import { UsuarioActual } from '../common/acceso';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -41,13 +42,14 @@ export class TratamientosController {
     return this.servicio.obtener(String(id), user);
   }
 
-  @Roles('ADMIN', 'VETERINARIO')
+  // Separación de funciones: el contenido clínico lo redacta solo el veterinario
+  @Roles('VETERINARIO')
   @Post()
   crear(@Body() dto: CreateTratamientoDto, @UsuarioActual() user: JwtPayload) {
     return this.servicio.crear(dto, user);
   }
 
-  @Roles('ADMIN', 'VETERINARIO')
+  @Roles('VETERINARIO')
   @Put(':id')
   actualizar(
     @Param('id', ParseIntPipe) id: number,
@@ -58,6 +60,7 @@ export class TratamientosController {
   }
 
   @Roles('ADMIN')
+  @Requiere2FA()
   @Delete(':id')
   eliminar(@Param('id', ParseIntPipe) id: number) {
     return this.servicio.eliminar(String(id));

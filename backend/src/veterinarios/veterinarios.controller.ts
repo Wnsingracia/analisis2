@@ -15,6 +15,7 @@ import { JwtAuthGuard } from '../guards/JwtAuthGuard';
 import type { JwtPayload } from '../guards/JwtAuthGuard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../guards/roles.decorator';
+import { Requiere2FA } from '../guards/requiere2fa.decorator';
 import { UsuarioActual, exigirPropioORoles } from '../common/acceso';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
@@ -67,6 +68,7 @@ export class VeterinariosController {
   }
 
   @Roles('ADMIN')
+  @Requiere2FA()
   @Delete(':id')
   eliminar(@Param('id', ParseIntPipe) id: number) {
     return this.servicio.eliminar(String(id));

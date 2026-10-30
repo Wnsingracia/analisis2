@@ -123,13 +123,50 @@ export default function Staff() {
     e.preventDefault();
     try {
       if (isEditing) {
-        // Enviar modificaciones al endpoint de NestJS (Ej: PUT /usuarios/empleados/:id)
-        await api.put(`/empleados/${selectedStaffId}`, formData);
+        // Aquí solo se editan los datos laborales (el backend exige el salario como número entero)
+        await api.put(`/empleados/${selectedStaffId}`, {
+          salario: Number(formData.salario),
+          hora_ingreso: formData.hora_ingreso,
+          hora_salida: formData.hora_salida,
+        });
         alert("Datos del empleado actualizados con éxito.");
       } else {
-        // Enviar nueva inserción por transacciones a Postgres
-        await api.post('/usuarios', formData);
-        alert(`Empleado [${formData.tipo_usuario}] registrado correctamente.`);
+        // No existe POST /usuarios: cada rol tiene su propio endpoint de alta
+        const tipo = formData.tipo_usuario;
+        const ENDPOINT_POR_ROL: Record<string, string> = {
+          VETERINARIO: '/veterinarios',
+          ESTILISTA: '/estilistas',
+          RECEPCIONISTA: '/recepcionistas',
+          ADMIN: '/administradores',
+        };
+        const datosPersonales = {
+          nombres: formData.nombres,
+          ap_pat: formData.ap_pat,
+          ap_mat: formData.ap_mat,
+          cel: formData.cel,
+          correo: formData.correo,
+          genero: formData.genero,
+          contrasenia: formData.contrasenia,
+        };
+        const datosLaborales = {
+          salario: Number(formData.salario),
+          hora_ingreso: formData.hora_ingreso,
+          hora_salida: formData.hora_salida,
+        };
+        const datosDelRol: Record<string, object> = {
+          VETERINARIO: { especializacion: formData.especializacion, titulo: formData.titulo },
+          ESTILISTA: { rol: formData.rol },
+          RECEPCIONISTA: { departamento: formData.departamento },
+          ADMIN: { nvl_acceso: formData.nvl_acceso },
+        };
+        // Un administrador no es empleado: no lleva salario ni horario
+        const cuerpo =
+          tipo === 'ADMIN'
+            ? { ...datosPersonales, ...datosDelRol.ADMIN }
+            : { ...datosPersonales, ...datosLaborales, ...datosDelRol[tipo] };
+
+        await api.post(ENDPOINT_POR_ROL[tipo], cuerpo);
+        alert(`Empleado [${tipo}] registrado correctamente.`);
       }
       setIsFormModalOpen(false);
       cargarEmpleados(); // Recargamos la grilla con los datos frescos de la BD
@@ -276,7 +313,7 @@ export default function Staff() {
               </div>
               
               {!isEditing && (
-                <InputField label="Contraseña de Acceso:" icon="lock" name="contrasenia" isPassword value={formData.contrasenia} onChange={handleInputChange} required />
+                <InputField label="Contraseña de Acceso:" icon="lock" name="contrasenia" isPassword value={formData.contrasenia} onChange={handleInputChange} placeholder="Mínimo 12 caracteres, con letras y números" required />
               )}
             </div>
           </div>

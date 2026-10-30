@@ -10,11 +10,13 @@ import { DataSource } from 'typeorm';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { contextoActual } from '../common/contexto';
+import { emergenciaVencida, expirarEmergencia } from '../common/emergencia';
 
 export interface JwtPayload {
   id_usuario: string;
   tipo_usuario: string;
   correo: string;
+  tv?: number; // versión del token (revocación de sesiones)
   iat?: number;
   exp?: number;
 }
@@ -55,11 +57,27 @@ export class JwtAuthGuard implements CanActivate {
     // y un cambio de rol se aplica al instante.
     const actual = await this.dataSource.getRepository(Usuario).findOne({
       where: { id_usuario: String(payload.id_usuario) },
-      select: { id_usuario: true, tipo_usuario: true, estado: true, correo: true },
+      select: {
+        id_usuario: true,
+        tipo_usuario: true,
+        estado: true,
+        correo: true,
+        token_version: true,
+        es_emergencia: true,
+        fecha_estado: true,
+      },
     });
 
     if (!actual) {
       throw new UnauthorizedException('Sesión inválida.');
+    }
+
+    // Cuenta de emergencia: su ventana de uso es corta; al vencer se vuelve a suspender sola
+    if (emergenciaVencida(actual)) {
+      await expirarEmergencia(this.dataSource.getRepository(Usuario), this.auditoria, actual.id_usuario);
+      throw new UnauthorizedException(
+        'La ventana de la cuenta de emergencia terminó y se suspendió automáticamente.',
+      );
     }
 
     if (actual.estado !== 'ACTIVA') {
@@ -74,6 +92,19 @@ export class JwtAuthGuard implements CanActivate {
       throw new UnauthorizedException('Tu cuenta no está activa. Contacta al administrador.');
     }
 
+    // Parte 2-d: revocación de sesiones. Cerrar sesión, cambiar la contraseña o que un
+    // admin "cierre las sesiones" sube token_version y los tokens anteriores dejan de valer.
+    if (Number(payload.tv ?? 0) !== Number(actual.token_version ?? 0)) {
+      await this.auditoria.registrar({
+        evento: 'SESION_REVOCADA_RECHAZADA',
+        recurso: `${request.method} ${request.originalUrl?.split('?')[0] ?? ''}`,
+        resultado: 'DENEGADO',
+        id_usuario: actual.id_usuario,
+        rol: actual.tipo_usuario,
+      });
+      throw new UnauthorizedException('Tu sesión fue cerrada o revocada. Inicia sesión de nuevo.');
+    }
+
     request.user = { ...payload, tipo_usuario: actual.tipo_usuario, correo: actual.correo };
 
     // El contexto de la petición permite a la auditoría saber quién actúa
@@ -83,6 +114,7 @@ export class JwtAuthGuard implements CanActivate {
         id_usuario: String(actual.id_usuario),
         tipo_usuario: actual.tipo_usuario,
         correo: actual.correo,
+        emergencia: actual.es_emergencia,
       };
     }
     return true;

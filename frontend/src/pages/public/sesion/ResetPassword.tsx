@@ -30,9 +30,9 @@ export default function ResetPassword() {
     return;
   }
 
-  // El backend exige al menos 6 caracteres (tu documento pide 12; ver nota abajo)
-  if (password.length < 6) {
-    alert('La contraseña debe tener por lo menos 6 caracteres.');
+  // Misma política que el backend: 12 a 72 caracteres, con al menos una letra y un número
+  if (password.length < 12 || password.length > 72 || !/[A-Za-z]/.test(password) || !/\d/.test(password)) {
+    alert('La contraseña debe tener entre 12 y 72 caracteres e incluir al menos una letra y un número.');
     return;
   }
 
