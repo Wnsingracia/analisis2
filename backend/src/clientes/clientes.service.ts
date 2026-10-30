@@ -42,6 +42,22 @@ export class ClientesService {
     });
   }
 
+  /**
+   * Un veterinario solo puede ver al cliente que es dueño de una mascota que él ha atendido.
+   * Se responde 404 (no 403) para no revelar que el cliente existe.
+   */
+  async exigirDuenoDePaciente(idCliente: string, idVeterinario: string): Promise<void> {
+    const filas = await this.dataSource.query(
+      `SELECT 1
+         FROM mascotas m
+         JOIN consultas cm ON cm."idMascota" = m.id_mascota
+        WHERE m.id_cliente = $1 AND cm.id_veterinario = $2
+        LIMIT 1`,
+      [idCliente, idVeterinario],
+    );
+    if (!filas.length) throw new NotFoundException('Cliente no encontrado.');
+  }
+
   async obtener(id: string) {
     const cliente = await this.repo.findOne({
       where: { id_usuario: id },

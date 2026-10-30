@@ -69,4 +69,23 @@ export class Usuario {
 
   @Column({ type: 'timestamptz', name: 'fecha_estado', nullable: true })
   fecha_estado: Date | null = null;
+
+  // Revocación de sesiones: el JWT lleva esta versión; al subirla, los tokens viejos dejan de valer
+  @Column({ type: 'int', name: 'token_version', default: 0 })
+  token_version: number = 0;
+
+  // Segundo factor (TOTP). El secreto se guarda cifrado (AES-256-GCM)
+  @Column({ type: 'text', name: 'totp_secreto', nullable: true })
+  totp_secreto: string | null = null;
+
+  @Column({ type: 'boolean', name: 'totp_activo', default: false })
+  totp_activo: boolean = false;
+
+  // Último paso de tiempo aceptado (evita reutilizar un mismo código)
+  @Column({ type: 'bigint', name: 'totp_ultimo_paso', nullable: true, transformer: bigintANumber })
+  totp_ultimo_paso: number | null = null;
+
+  // Cuenta de emergencia (break-glass): ADMIN en reposo (SUSPENDIDA) que solo se activa ante un incidente
+  @Column({ type: 'boolean', name: 'es_emergencia', default: false })
+  es_emergencia: boolean = false;
 }

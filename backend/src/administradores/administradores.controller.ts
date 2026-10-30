@@ -18,6 +18,7 @@ import { JwtAuthGuard } from '../guards/JwtAuthGuard';
 import type { JwtPayload } from '../guards/JwtAuthGuard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../guards/roles.decorator';
+import { Requiere2FA } from '../guards/requiere2fa.decorator';
 import { UsuarioActual, idDe } from '../common/acceso';
 
 // Todo este controller es exclusivo de administradores
@@ -37,6 +38,7 @@ export class AdministradoresController {
     return this.servicio.obtener(String(id));
   }
 
+  @Requiere2FA() // crear un administrador es una operación de alto riesgo
   @Post()
   crear(@Body() dto: CreateAdministradorDto) {
     return this.servicio.crear(dto);
@@ -50,6 +52,7 @@ export class AdministradoresController {
     return this.servicio.actualizar(String(id), dto);
   }
 
+  @Requiere2FA()
   @Delete(':id')
   eliminar(
     @Param('id', ParseIntPipe) id: number,

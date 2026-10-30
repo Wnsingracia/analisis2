@@ -7,7 +7,9 @@ import { AsyncLocalStorage } from 'async_hooks';
  */
 export interface ContextoPeticion {
   ip?: string;
-  user?: { id_usuario: string; tipo_usuario: string; correo?: string };
+  user?: { id_usuario: string; tipo_usuario: string; correo?: string; emergencia?: boolean };
+  // Se marca cuando ya se registró un evento DENEGADO específico de esta petición
+  denegadoRegistrado?: boolean;
 }
 
 export const contextoStorage = new AsyncLocalStorage<ContextoPeticion>();

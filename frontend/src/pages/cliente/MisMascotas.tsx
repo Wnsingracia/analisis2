@@ -159,7 +159,7 @@ export default function MisMascotas() {
         // REGISTRAR NUEVA MASCOTA
         await api.post('/mascotas', {
           ...datos,
-          id_cliente: usuario.id_cliente,
+          id_cliente: usuario?.id_usuario
         });
 
         alert('¡Mascota registrada correctamente!');

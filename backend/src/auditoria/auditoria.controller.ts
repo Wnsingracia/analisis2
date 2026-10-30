@@ -12,7 +12,10 @@ export class AuditoriaController {
   // Solo lectura y solo para administradores. No existe PUT ni DELETE.
   @Roles('ADMIN')
   @Get()
-  listar(@Query('limite', new DefaultValuePipe(100), ParseIntPipe) limite: number) {
-    return this.auditoria.listar(limite);
+  listar(
+    @Query('limite', new DefaultValuePipe(100), ParseIntPipe) limite: number,
+    @Query('evento') evento?: string,
+  ) {
+    return this.auditoria.listar(limite, evento);
   }
 }

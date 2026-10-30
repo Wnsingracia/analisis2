@@ -25,6 +25,7 @@ import { RecepcionistaLayout } from './components/layout/RecepcionistaLayout';
 import Dashboard from './pages/admin/Dashboard';
 import Staff from './pages/admin/Staff';
 import Identidades from './pages/admin/Identidades';
+import Seguridad from './pages/admin/Seguridad';
 import Clients from './pages/admin/Clientes'; 
 import Inventory from './pages/admin/Inventory';
 import Appointments from './pages/admin/Appointments';
@@ -73,7 +74,8 @@ function App() {
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="staff" element={<Staff />} />
           <Route path="identidades" element={<Identidades />} />
-          <Route path="clients" element={<Clients />} />
+          <Route path="seguridad" element={<Seguridad />} />
+          <Route path="clients" element={<Clients />} /> 
           <Route path="inventory" element={<Inventory />} />
           <Route path="appointments" element={<Appointments />} />
           <Route path="clinical-history/:idMascota"element={<ClinicalHistory />}/>

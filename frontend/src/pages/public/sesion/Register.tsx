@@ -72,9 +72,8 @@ export default function Register() {
         captchaToken
       });
 
-      alert(
-        `${response.data.mensaje || 'Registro exitoso'} - Tu ID asignado es: ${response.data.id_usuario || ''}`
-      );
+      // El backend responde igual exista o no el correo (no revela cuentas)
+      alert(response.data.mensaje || 'Registro procesado');
 
       // Limpiar CAPTCHA antes de salir
       setCaptchaToken('');

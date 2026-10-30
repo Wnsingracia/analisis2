@@ -27,21 +27,32 @@ export class CitasService {
 
   /** CLIENTE: solo sus citas. El resto de roles con acceso ve la agenda completa. */
   listar(user: JwtPayload) {
-    return this.repo.find({
-      where: rolDe(user) === 'CLIENTE' ? { id_cliente: idDe(user) } : {},
-      order: { fecha: 'DESC', hora: 'DESC' },
-    });
+    const rol = rolDe(user);
+    const qb = this.repo
+      .createQueryBuilder('c')
+      .orderBy('c.fecha', 'DESC')
+      .addOrderBy('c.hora', 'DESC');
+    if (rol === 'CLIENTE') qb.where('c.id_cliente = :id', { id: idDe(user) });
+    // Mínimo privilegio por tipo de servicio: el estilista solo ve citas de estética y el
+    // veterinario, las clínicas. Ninguno de los dos ve el costo.
+    else if (rol === 'ESTILISTA') qb.where("COALESCE(c.tipo, '') ILIKE 'Est%'");
+    else if (rol === 'VETERINARIO') qb.where("COALESCE(c.tipo, '') NOT ILIKE 'Est%'");
+    return qb.getMany().then((filas) => ocultarCosto(filas, rol));
   }
 
   async obtener(id: string, user: JwtPayload) {
     const cita = await this.repo.findOne({ where: { id_cita: id } });
+    const rol = rolDe(user);
+    const esEstetica = /^est/i.test(String(cita?.tipo ?? ''));
     if (
       !cita ||
-      (rolDe(user) === 'CLIENTE' && cita.id_cliente !== idDe(user))
+      (rol === 'CLIENTE' && cita.id_cliente !== idDe(user)) ||
+      (rol === 'ESTILISTA' && !esEstetica) ||
+      (rol === 'VETERINARIO' && esEstetica)
     ) {
       throw new NotFoundException('Cita no encontrada.');
     }
-    return cita;
+    return ocultarCosto(cita, rol);
   }
 
   /**
@@ -52,25 +63,25 @@ export class CitasService {
    */
     
   async agenda(user: JwtPayload) {
-    const rol = rolDe(user);
-    const id = idDe(user);
+  const rol = rolDe(user);
+  const id = idDe(user);
 
-    const joinConsulta =
-      rol === 'VETERINARIO'
-        ? `LEFT JOIN consultas cm
-            ON c.id_cita = cm.id_cita
-            AND cm.id_veterinario = $1`
-        : `LEFT JOIN consultas cm
-            ON c.id_cita = cm.id_cita`;
+  const joinConsulta =
+    rol === 'VETERINARIO'
+      ? 'LEFT JOIN consultas cm ON c.id_cita = cm.id_cita AND cm.id_veterinario = $1'
+      : 'LEFT JOIN consultas cm ON c.id_cita = cm.id_cita';
+  const filtro =
+    rol === 'CLIENTE'
+      ? 'WHERE c.id_cliente = $1'
+      : rol === 'VETERINARIO'
+        ? "WHERE COALESCE(c.tipo, '') NOT ILIKE 'Est%'" // sin citas de estética
+        : '';
 
-    const filtro =
-      rol === 'CLIENTE' ? 'WHERE c.id_cliente = $1' : '';
+  // Solo hay $1 en la consulta para VETERINARIO y CLIENTE
+  const params = rol === 'VETERINARIO' || rol === 'CLIENTE' ? [id] : [];
 
-    const params =
-      rol === 'VETERINARIO' || rol === 'CLIENTE' ? [id] : [];
-
-    try {
-      return await this.dataSource.query(
+  try {
+    const filas = await this.dataSource.query(
       `SELECT
           c.id_cita,
           c.fecha,
@@ -86,31 +97,22 @@ export class CitasService {
           t.descripcion AS tratamiento_descripcion,
           t.fecha_emision
       FROM citas c
-
       LEFT JOIN mascotas m
         ON c.id_mascota = m.id_mascota
         AND c.id_cliente = m.id_cliente
-
       ${joinConsulta}
-
       LEFT JOIN tratamientos t
         ON cm.id_cons_medica = t.id_cons_medica
-
       ${filtro}
-
       ORDER BY c.fecha DESC, c.hora DESC`,
       params,
     );
-    } catch (error) {
-      this.logger.error(
-        'Error al obtener la agenda',
-        (error as Error)?.stack,
-      );
-
-      throw new BadRequestException('No se pudo obtener la agenda.');
-    }
+    return ocultarCosto(filas, rol);
+  } catch (error) {
+    this.logger.error('Error al obtener la agenda', (error as Error)?.stack);
+    throw new BadRequestException('No se pudo obtener la agenda.');
   }
-
+}
 
   async crear(dto: CreateCitaDto, user: JwtPayload) {
     // Un recepcionista siempre queda registrado como quien creó la cita
@@ -183,4 +185,11 @@ export class CitasService {
       );
     }
   }
+}
+
+/** El costo es un dato administrativo: lo ven ADMIN, RECEPCIONISTA y el CLIENTE dueño de la cita. */
+function ocultarCosto<T>(datos: T, rol: string): T {
+  if (rol !== 'VETERINARIO' && rol !== 'ESTILISTA') return datos;
+  const sinCosto = (fila: any) => ({ ...fila, costo: null });
+  return (Array.isArray(datos) ? datos.map(sinCosto) : sinCosto(datos)) as T;
 }

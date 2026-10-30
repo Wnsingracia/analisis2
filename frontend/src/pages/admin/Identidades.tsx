@@ -13,6 +13,7 @@ interface Identidad {
   correo: string;
   tipo_usuario: string;
   estado: Estado;
+  es_emergencia?: boolean;
   motivo_estado: string | null;
   fecha_estado: string | null;
 }
@@ -44,6 +45,7 @@ export default function Identidades() {
   const [usuarios, setUsuarios] = useState<Identidad[]>([]);
   const [eventos, setEventos] = useState<EventoAuditoria[]>([]);
   const [busqueda, setBusqueda] = useState('');
+  const [filtroEvento, setFiltroEvento] = useState('');
   const [accion, setAccion] = useState<Accion | null>(null);
   const [motivo, setMotivo] = useState('');
   const [rolDestino, setRolDestino] = useState('VETERINARIO');
@@ -52,7 +54,7 @@ export default function Identidades() {
 
   const cargar = async () => {
     try {
-      const [u, a] = await Promise.all([api.get('/usuarios'), api.get('/auditoria?limite=50')]);
+      const [u, a] = await Promise.all([api.get('/usuarios'), api.get('/auditoria?limite=200')]);
       setUsuarios(u.data);
       setEventos(a.data);
     } catch (error) {
@@ -104,6 +106,19 @@ export default function Identidades() {
     }
   };
 
+  // Parte 2-d: cierra todas las sesiones abiertas de una cuenta (pide 2.º factor)
+  const revocarSesiones = async (u: Identidad) => {
+    if (!window.confirm(`¿Cerrar todas las sesiones abiertas de ${u.nombres} ${u.ap_pat}?`)) return;
+    try {
+      const { data } = await api.post(`/usuarios/${u.id_usuario}/revocar-sesiones`);
+      alert(data.mensaje);
+      await cargar();
+    } catch (error: any) {
+      const msg = error?.response?.data?.message;
+      alert(Array.isArray(msg) ? msg.join('\n') : msg ?? 'No se pudieron cerrar las sesiones.');
+    }
+  };
+
   const filtrados = usuarios.filter((u) =>
     `${u.nombres} ${u.ap_pat} ${u.correo} ${u.tipo_usuario}`.toLowerCase().includes(busqueda.toLowerCase()),
   );
@@ -118,7 +133,7 @@ export default function Identidades() {
   const puedeEnviar =
     !!accion &&
     !enviando &&
-    (accion.tipo === 'rol' ? motivo.trim().length >= 3 : accion.estado === 'ACTIVA' || motivo.trim().length >= 3);
+    (accion.tipo === 'rol' ? motivo.trim().length >= 3 : (accion.estado === 'ACTIVA' && !accion.usuario.es_emergencia) || motivo.trim().length >= 3);
 
   const btn = 'px-3 py-1 rounded-full text-xs font-semibold border border-outline-variant/50 hover:bg-surface-variant/50 transition-colors';
 
@@ -161,6 +176,11 @@ export default function Identidades() {
                     <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${colorEstado[u.estado] ?? ''}`} title={u.motivo_estado ?? ''}>
                       {u.estado}
                     </span>
+                    {u.es_emergencia && (
+                      <span className="ml-2 px-2 py-0.5 rounded-full text-xs font-semibold bg-purple-100 text-purple-800" title="Cuenta de emergencia (break-glass)">
+                        EMERGENCIA
+                      </span>
+                    )}
                   </td>
                   <td className="p-3 flex flex-wrap gap-2">
                     {u.estado === 'ACTIVA' && (
@@ -171,6 +191,9 @@ export default function Identidades() {
                     )}
                     {u.estado !== 'REVOCADA' && (
                       <button className={`${btn} text-error`} onClick={() => abrir({ tipo: 'estado', usuario: u, estado: 'REVOCADA' })}>Revocar</button>
+                    )}
+                    {u.estado !== 'REVOCADA' && (
+                      <button className={btn} onClick={() => revocarSesiones(u)}>Cerrar sesiones</button>
                     )}
                     {u.estado === 'ACTIVA' && u.tipo_usuario !== 'CLIENTE' && (
                       <button className={btn} onClick={() => abrir({ tipo: 'rol', usuario: u })}>Cambiar rol</button>
@@ -184,7 +207,13 @@ export default function Identidades() {
       </section>
 
       <section className="space-y-3">
-        <h3 className="font-display text-lg font-bold text-primary">Registro de auditoría (últimos 50 eventos)</h3>
+        <h3 className="font-display text-lg font-bold text-primary">Registro de auditoría (últimos 200 eventos)</h3>
+        <input
+          value={filtroEvento}
+          onChange={(e) => setFiltroEvento(e.target.value)}
+          placeholder="Filtrar por evento (LOGIN, EMERGENCIA, ACCESO_DENEGADO, ELIMINAR…)"
+          className="w-full max-w-md px-4 py-2 rounded-xl border border-outline-variant/50 bg-white font-body text-sm"
+        />
         <div className="overflow-x-auto rounded-2xl border border-outline-variant/30 bg-surface-container-lowest">
           <table className="w-full text-xs font-body">
             <thead className="text-left text-on-surface-variant bg-surface-container-low">
@@ -198,7 +227,9 @@ export default function Identidades() {
               </tr>
             </thead>
             <tbody>
-              {eventos.map((e) => (
+              {eventos
+                .filter((e) => e.evento.toLowerCase().includes(filtroEvento.toLowerCase()))
+                .map((e) => (
                 <tr key={e.id_evento} className="border-t border-outline-variant/20 align-top">
                   <td className="p-3 whitespace-nowrap">{new Date(e.fecha).toLocaleString()}</td>
                   <td className="p-3 font-semibold">{e.evento}</td>
@@ -239,7 +270,7 @@ export default function Identidades() {
           )}
           <label className="block">
             <span className="text-on-surface-variant">
-              Motivo {accion?.tipo === 'estado' && accion.estado === 'ACTIVA' ? '(opcional)' : '(obligatorio)'}
+              Motivo {accion?.tipo === 'estado' && accion.estado === 'ACTIVA' && !accion.usuario.es_emergencia ? '(opcional)' : '(obligatorio)'}
             </span>
             <textarea
               value={motivo}
