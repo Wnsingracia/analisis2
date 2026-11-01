@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api from '../../services/api';
 
 interface ResultadoRespaldo {
@@ -18,6 +19,17 @@ const mensajeError = (error: any, porDefecto: string) => {
 export default function Respaldos() {
   const [aviso, setAviso] = useState<{ tipo: 'ok' | 'error'; texto: string } | null>(null);
   const [trabajando, setTrabajando] = useState(false);
+  // null = comprobando; los respaldos exigen que el administrador tenga activo el segundo factor
+  const [dosFactoresActivo, setDosFactoresActivo] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    api
+      .get('/auth/2fa')
+      .then(({ data }) => setDosFactoresActivo(!!data.activo))
+      .catch(() => setDosFactoresActivo(false));
+  }, []);
+
+  const bloqueado = trabajando || dosFactoresActivo !== true;
 
   const ejecutar = async (accion: () => Promise<void>) => {
     setTrabajando(true);
@@ -33,6 +45,7 @@ export default function Respaldos() {
 
   const generarLocal = () =>
     ejecutar(async () => {
+      // El servidor exige el código 2FA; api.ts lo pide con un cuadro y reintenta la misma petición
       const { data } = await api.post<ResultadoRespaldo>('/respaldos/generar');
       setAviso({ tipo: 'ok', texto: data.mensaje || `Respaldo local ${data.nombre} generado correctamente.` });
     });
@@ -55,6 +68,21 @@ export default function Respaldos() {
       </header>
 
       <section className="rounded-2xl border border-outline-variant/30 bg-surface-container-lowest p-6 space-y-6 font-body text-sm">
+        {dosFactoresActivo === false && (
+          <div className="p-4 rounded-xl text-sm bg-amber-50 text-amber-900 border border-amber-200">
+            Los respaldos están protegidos con segundo factor y aún no lo has activado.{' '}
+            <Link to="/admin/seguridad" className="underline font-semibold">
+              Actívalo en Seguridad
+            </Link>{' '}
+            para habilitar estos botones.
+          </div>
+        )}
+        {dosFactoresActivo === true && (
+          <div className="p-4 rounded-xl text-sm bg-sky-50 text-sky-900 border border-sky-200">
+            Cada respaldo pedirá un código de 6 dígitos de tu app autenticadora. Un código solo sirve una vez.
+          </div>
+        )}
+
         <div className="space-y-4">
           <h3 className="font-semibold text-base text-primary">Operaciones de respaldo</h3>
           <p className="text-xs text-on-surface-variant">
@@ -62,11 +90,11 @@ export default function Respaldos() {
           </p>
           
           <div className="flex flex-wrap items-center gap-3 pt-2">
-            <button className={btnCls} disabled={trabajando} onClick={generarLocal}>
+            <button className={btnCls} disabled={bloqueado} onClick={generarLocal}>
               {trabajando ? 'Procesando...' : 'Generar respaldo local'}
             </button>
 
-            <button className={`${btnCls} bg-emerald-700 hover:bg-emerald-800`} disabled={trabajando} onClick={generarDrive}>
+            <button className={`${btnCls} bg-emerald-700 hover:bg-emerald-800`} disabled={bloqueado} onClick={generarDrive}>
               {trabajando ? 'Procesando...' : 'Subir copia a Google Drive'}
             </button>
           </div>

@@ -1,32 +1,25 @@
-
-import {
-  Controller,
-  Post,
-  UseGuards,
-} from '@nestjs/common';
+import { Controller, Post, UseGuards } from '@nestjs/common';
 
 import { RespaldosService } from './respaldos.service';
 import { JwtAuthGuard } from '../guards/JwtAuthGuard';
-import { AdminGuard } from '../guards/AdminGuard';
+import { RolesGuard } from '../guards/roles.guard';
+import { Roles } from '../guards/roles.decorator';
+import { Requiere2FA } from '../guards/requiere2fa.decorator';
 
 @Controller('respaldos')
-@UseGuards(JwtAuthGuard, AdminGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('ADMIN')
+@Requiere2FA()
 export class RespaldosController {
-  constructor(
-    private readonly respaldosService: RespaldosService,
-  ) {}
+  constructor(private readonly respaldosService: RespaldosService) {}
 
-  /**
-   * POST /respaldos/generar
-   * Solamente administradores autenticados.
-   */
   @Post('generar')
   async generarRespaldo() {
     return this.respaldosService.generarRespaldo();
   }
 
   @Post('generar-drive')
-  async generarRespaldoDrive(){
-    return await this.respaldosService.generarRespaldoDrive();
+  async generarRespaldoDrive() {
+    return this.respaldosService.generarRespaldoDrive();
   }
 }

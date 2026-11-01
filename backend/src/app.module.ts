@@ -21,6 +21,7 @@ import { AuthModule } from './auth/auth.module';
 import { AuditoriaModule } from './auditoria/auditoria.module';
 import { SegundoFactorModule } from './segundo-factor/segundo-factor.module';
 import { RespaldosModule } from './respaldos/respaldos.module';
+import { SistemaModule } from './sistema/sistema.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { RespaldosModule } from './respaldos/respaldos.module';
 
     AuditoriaModule,
     SegundoFactorModule,
+    SistemaModule,
     UsuariosModule,
     VeterinariosModule,
     AdministradoresModule,
