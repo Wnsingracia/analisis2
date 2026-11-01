@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { ScheduleModule } from '@nestjs/schedule';
 
 import { UsuariosModule } from './usuarios/usuarios.module';
 import { VeterinariosModule } from './veterinarios/veterinarios.module';
@@ -19,6 +20,7 @@ import { AuthModule } from './auth/auth.module';
 
 import { AuditoriaModule } from './auditoria/auditoria.module';
 import { SegundoFactorModule } from './segundo-factor/segundo-factor.module';
+import { RespaldosModule } from './respaldos/respaldos.module';
 
 @Module({
   imports: [
@@ -49,6 +51,7 @@ import { SegundoFactorModule } from './segundo-factor/segundo-factor.module';
         ssl: { rejectUnauthorized: false },
       }),
     }),
+    ScheduleModule.forRoot(),
 
     AuditoriaModule,
     SegundoFactorModule,
@@ -64,6 +67,7 @@ import { SegundoFactorModule } from './segundo-factor/segundo-factor.module';
     RecepcionistasModule,
     TratamientosModule,
     AuthModule,
+    RespaldosModule,
   ],
 })
 export class AppModule {}

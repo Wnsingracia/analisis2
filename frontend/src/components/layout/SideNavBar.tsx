@@ -72,6 +72,12 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({ onOpenGlobalAppointment 
               Inventario
             </Link>
           </li>
+          <li>
+            <Link to="/admin/respaldos" className={`rounded-xl font-body text-sm font-semibold flex items-center px-4 py-3 mx-2 transition-all duration-200 ${isActive('/admin/inventory') ? 'bg-primary-container text-white shadow-sm' : 'text-on-surface-variant hover:bg-surface-variant/50 hover:translate-x-1 hover:text-primary'}`}>
+              <span className={`material-symbols-outlined mr-3 ${isActive('/admin/inventory') ? 'icon-fill' : ''}`}>inventory_2</span>
+              Respaldos
+            </Link>
+          </li>
           
           {/* NUEVO BOTÓN DE REPORTES (No funcional aún, solo visual) */}
           <li className="mt-4 pt-4 border-t border-outline-variant/30">
