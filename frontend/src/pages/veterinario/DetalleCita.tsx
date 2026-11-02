@@ -42,7 +42,7 @@ const DetalleCita: React.FC = () => {
         setError('');
 
         const respuesta = await api.get(
-          `/citas/veterinario/:${id}`
+          `/citas/veterinario/${id}`
         );
 
         setCita(respuesta.data?.cita || respuesta.data);
