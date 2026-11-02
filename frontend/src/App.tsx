@@ -30,7 +30,7 @@ import Clients from './pages/admin/Clientes';
 import Inventory from './pages/admin/Inventory';
 import Appointments from './pages/admin/Appointments';
 import ClinicalHistory from './pages/admin/ClinicalHistory';
-
+import Respaldos from './pages/admin/Respaldos';
 
 // Layout de Admin y vistas de Cliente
 import { ClienteLayout } from './components/layout/ClienteLayout';
@@ -79,6 +79,7 @@ function App() {
           <Route path="inventory" element={<Inventory />} />
           <Route path="appointments" element={<Appointments />} />
           <Route path="clinical-history/:idMascota"element={<ClinicalHistory />}/>
+          <Route path="respaldos" element={<Respaldos />} />
         </Route>
 
         {/* ENTORNO DEL CLIENTE*/}
