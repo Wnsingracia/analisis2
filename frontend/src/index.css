@@ -3,8 +3,8 @@
 
 @import "tailwindcss";
 
-@theme {
-  /* ================= COLORES ================= */
+/* Definición de variables globales compatibles con Tailwind v4 */
+:root {
   --color-surface: #f3faff;
   --color-surface-dim: #c7dde9;
   --color-surface-container-lowest: #ffffff;
@@ -36,28 +36,10 @@
   --color-outline: #6d7a77;
   --color-outline-variant: #bcc9c6;
 
-  /* ================= TIPOGRAFÍA ================= */
   --font-display: 'Quicksand', sans-serif;
   --font-body: 'Inter', sans-serif;
-
-  /* ================= ESPACIADOS ================= */
-  --spacing-base: 8px;
-  --spacing-xs: 4px;
-  --spacing-sm: 12px;
-  --spacing-md: 24px;
-  --spacing-lg: 48px;
-  --spacing-xl: 80px;
-  --spacing-gutter: 24px;
-  --spacing-margin-mobile: 16px;
-  --spacing-margin-desktop: 64px;
-
-  /* ================= BORDES Y SOMBRAS ================= */
-  --radius-card: 1.5rem;
-  --shadow-ambient: 0 10px 40px -10px rgba(0, 104, 94, 0.1), 0 4px 6px -4px rgba(0, 104, 94, 0.05);
-  --shadow-glow: 0 0 0 4px rgba(0, 150, 136, 0.15);
 }
 
-/* Estilos base nativos en CSS puro (evita el conflicto con lightningcss y @apply) */
 body {
   background-color: var(--color-surface);
   color: var(--color-on-surface);
@@ -65,7 +47,6 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-/* Configuración global para los íconos de Material Symbols */
 .material-symbols-outlined {
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
 }
