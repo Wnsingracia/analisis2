@@ -1,3 +1,4 @@
+# --- Fase 1: Compilación ---
 FROM node:22-alpine AS builder
 WORKDIR /app
 COPY package*.json ./
@@ -5,10 +6,12 @@ RUN npm install
 COPY . .
 RUN npm run build
 
+# --- Fase 2: Ejecución de Producción ---
 FROM node:22-alpine
 WORKDIR /app
 COPY package*.json ./
-RUN npm ci --only=production
+# Cambiamos 'npm ci' por 'npm install --omit=dev' para evitar errores de sincronización en Docker
+RUN npm install --omit=dev
 COPY --from=builder /app/dist ./dist
 EXPOSE 3000
 CMD ["node", "dist/main.js"]
