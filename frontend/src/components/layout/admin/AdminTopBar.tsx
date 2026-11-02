@@ -1,8 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import logoVetCare2 from '../../assets/logo-VetCare2.jpeg';
+import { useAuth } from '../../../context/AuthContext';
+import logoVetCare2 from '../../../assets/logo-VetCare2.jpeg';
 
 export const AdminTopBar: React.FC = () => {
   const { usuario: admin, cerrarSesion } = useAuth();
