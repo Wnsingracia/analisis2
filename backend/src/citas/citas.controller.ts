@@ -37,6 +37,23 @@ export class CitasController {
     return this.servicio.agenda(user);
   }
 
+    // VETERINARIO: únicamente sus citas asignadas
+  @Roles('VETERINARIO')
+  @Get('veterinario/agenda')
+  agendaVeterinario(@UsuarioActual() user: JwtPayload) {
+    return this.servicio.agendaVeterinario(user);
+  }
+
+  // VETERINARIO: detalle de una cita asignada
+  @Roles('VETERINARIO')
+  @Get('veterinario/:id')
+  detalleVeterinario(
+    @Param('id', ParseIntPipe) id: number,
+    @UsuarioActual() user: JwtPayload,
+  ) {
+    return this.servicio.detalleVeterinario(String(id), user);
+  }
+
   @Roles(...TIPOS_USUARIO)
   @Get(':id')
   obtener(

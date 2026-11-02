@@ -20,8 +20,7 @@ import Contacto from './pages/public/Contacto';
 import NotFound from './pages/public/NotFound';
 
 // Layout de Admin y vistas de Admin
-import { AdminLayout } from './components/layout/AdminLayout'; 
-import { RecepcionistaLayout } from './components/layout/RecepcionistaLayout'; 
+import { AdminLayout } from './components/layout/admin/AdminLayout'; 
 import Dashboard from './pages/admin/Dashboard';
 import Staff from './pages/admin/Staff';
 import Identidades from './pages/admin/Identidades';
@@ -32,17 +31,24 @@ import Appointments from './pages/admin/Appointments';
 import ClinicalHistory from './pages/admin/ClinicalHistory';
 import Respaldos from './pages/admin/Respaldos';
 
-// Layout de Admin y vistas de Cliente
-import { ClienteLayout } from './components/layout/ClienteLayout';
+// Layout de y vistas de Recepcionita
+import { RecepcionistaLayout } from './components/layout/recepcionista/RecepcionistaLayout'; 
+
+// Layout de y vistas de Cliente
+import { ClienteLayout } from './components/layout/cliente/ClienteLayout';
 import MisMascotas from './pages/cliente/MisMascotas';
 import MisCitas from './pages/cliente/MisCitas';
+
+// Layout de y vistas de Veterinarios
+import { VeterinarioLayout} from './components/layout/veterinario/VeterinarioLayout';
+import MisCitasVeterinario from './pages/veterinario/MisCitas';
+import DetalleCita from './pages/veterinario/DetalleCita';
 
 // Dashboards por rol y otros
 import ClientDashboard from './pages/public/dashboard/ClientDashBoard';
 import VeterinarioDashboard from './pages/public/dashboard/VeterinarioDashBoard';
 import EstilistaDashboard from './pages/public/dashboard/EstilistaDashBoard';
 import RecepcionistaDashboard from './pages/public/dashboard/RecepcionistaDashBoard';
-import MisPacientes from './pages/public/MisPacientes';
 
 
 function App() {
@@ -65,9 +71,7 @@ function App() {
         <Route path="/reset-password" element={<ResetPassword />} />
 
         {/* DASHBOARDS POR ROL */}
-        <Route path="/dashboard-veterinario" element={<VeterinarioDashboard />}/>
         <Route path="/dashboard-estilista"  element={<EstilistaDashboard />}/>
-        <Route path="/vet/mis-pacientes" element={<MisPacientes />}/>
 
         {/* ENTORNO DEL ADMINISTRADOR */}
         <Route path="/admin" element={<AdminLayout />}>
@@ -90,8 +94,6 @@ function App() {
           <Route path="catalogo" element={<div>Catálogo de servicios y productos</div>}/>
           <Route path="citas" element={<MisCitas />} />
         </Route>
-        {/* REDIRECCIÓN DEL DASHBOARD ANTERIOR */}
-        <Route path="/dashboard-cliente" element={<Navigate to="/cliente/dashboard" replace />}/>
 
         {/* ENTORNO DEL RECEPCIONISTA */}
         <Route path="/recepcionista"element={<RecepcionistaLayout />}>
@@ -100,10 +102,21 @@ function App() {
           <Route path="appointments" element={<Appointments />}/>
           <Route path="inventory"element={<Inventory />}/>
         </Route>
+        
+        {/* ENTORNO DEL VETERINARIO */}
+        <Route path="/veterinario" element={<VeterinarioLayout />}>
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<VeterinarioDashboard />} />
+          <Route path="patients" element={<div>Mis pacientes</div>} />
+          <Route path="citas" element={<MisCitasVeterinario />} />
+          <Route path="citas/:id" element={<DetalleCita />} />
+          <Route path="perfil" element={<div>Mis datos</div>} />
+        </Route>
 
         {/* REDIRECCIÓN DE LA RUTA ANTERIOR */}
         <Route path="/dashboard-recepcionista"element={<Navigate to="/recepcionista/dashboard" replace/>}/>
         <Route path="/dashboard-cliente"element={<Navigate to="/cliente/dashboard" replace/>}/>
+        <Route path="/dashboard-veterinario"element={<Navigate to="/veterinario/dashboard" replace/>}/>
         
         {/* PÁGINA 404: cualquier ruta inexistente */}
         <Route path="*" element={<NotFound />} />

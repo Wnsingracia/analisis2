@@ -57,8 +57,12 @@ export class Usuario {
   @Column({ type: 'text', name: 'bloqueado_hasta', nullable: true })
   bloqueado_hasta: string | null = null;
 
-  @Column({ type: 'timestamptz', name: 'fecha_creacion', nullable: true })
-  fecha_creacion?: Date;
+  @CreateDateColumn({
+    type: 'timestamptz',
+    name: 'fecha_creacion',
+    default: () => 'NOW()'
+  })
+  fecha_creacion!: Date;
 
   // Ciclo de vida de la identidad: ACTIVA, SUSPENDIDA o REVOCADA
   @Column({ type: 'text', name: 'estado', default: 'ACTIVA' })

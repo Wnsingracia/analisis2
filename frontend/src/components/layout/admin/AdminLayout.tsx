@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { SideNavBar } from './SideNavBar';
 import { AdminTopBar } from './AdminTopBar';
-import { Modal } from '../ui/Modal';
-import { InputField } from '../ui/InputField';
-import { Button } from '../ui/Button';
+import { Modal } from '../../ui/Modal';
+import { InputField } from '../../ui/InputField';
+import { Button } from '../../ui/Button';
 
 export const AdminLayout: React.FC = () => {
   // Estado para controlar el Modal desde cualquier parte del sistema

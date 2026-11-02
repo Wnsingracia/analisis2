@@ -68,14 +68,22 @@ export class CitasService {
 
   const joinConsulta =
     rol === 'VETERINARIO'
-      ? 'LEFT JOIN consultas cm ON c.id_cita = cm.id_cita AND cm.id_veterinario = $1'
-      : 'LEFT JOIN consultas cm ON c.id_cita = cm.id_cita';
+      ? `LEFT JOIN consultas cm
+          ON c.id_cita = cm.id_cita
+          AND cm.id_veterinario = $1`
+      : rol === 'ESTILISTA'
+        ? `LEFT JOIN consultas cm ON FALSE`
+        : `LEFT JOIN consultas cm
+            ON c.id_cita = cm.id_cita`;
+
   const filtro =
     rol === 'CLIENTE'
       ? 'WHERE c.id_cliente = $1'
       : rol === 'VETERINARIO'
-        ? "WHERE COALESCE(c.tipo, '') NOT ILIKE 'Est%'" // sin citas de estética
-        : '';
+        ? "WHERE COALESCE(c.tipo, '') NOT ILIKE 'Est%'"
+        : rol === 'ESTILISTA'
+          ? "WHERE COALESCE(c.tipo, '') ILIKE 'Est%'"
+          : '';
 
   // Solo hay $1 en la consulta para VETERINARIO y CLIENTE
   const params = rol === 'VETERINARIO' || rol === 'CLIENTE' ? [id] : [];
@@ -185,6 +193,153 @@ export class CitasService {
       );
     }
   }
+  /**
+   * VETERINARIO:
+   * Obtiene únicamente las citas que tienen una consulta
+   * asignada al veterinario autenticado.
+   */
+  async agendaVeterinario(user: JwtPayload) {
+    const idVeterinario = idDe(user);
+
+    try {
+      const filas = await this.dataSource.query(
+        `
+        SELECT
+          c.id_cita,
+          c.fecha,
+          c.hora,
+          c.tipo,
+          c.descripcion AS cita_descripcion,
+          c.costo,
+          c.id_mascota,
+          m.nombre AS mascota_nombre,
+          c.id_cliente,
+          cm.id_cons_medica,
+          t.id_tratamiento,
+          t.descripcion AS tratamiento_descripcion,
+          t.fecha_emision
+
+        FROM citas c
+
+        INNER JOIN LATERAL (
+          SELECT
+            cm.id_cons_medica
+          FROM consultas cm
+          WHERE cm.id_cita = c.id_cita
+            AND cm.id_veterinario = $1
+          ORDER BY cm.id_cons_medica DESC
+          LIMIT 1
+        ) cm ON TRUE
+
+        LEFT JOIN mascotas m
+          ON m.id_mascota = c.id_mascota
+          AND m.id_cliente = c.id_cliente
+
+        LEFT JOIN tratamientos t
+          ON t.id_cons_medica = cm.id_cons_medica
+
+        ORDER BY c.fecha DESC, c.hora DESC
+        `,
+        [idVeterinario],
+      );
+
+      // El veterinario no necesita conocer los costos administrativos.
+      return ocultarCosto(filas, 'VETERINARIO');
+
+    } catch (error) {
+      this.logger.error(
+        'Error al obtener las citas del veterinario',
+        (error as Error)?.stack,
+      );
+
+      throw new BadRequestException(
+        'No se pudieron obtener las citas asignadas.',
+      );
+    }
+  }
+    /**
+   * VETERINARIO:
+   * Consulta el detalle de una cita solamente si
+   * existe una consulta asignada al veterinario autenticado.
+   */
+  async detalleVeterinario(id: string, user: JwtPayload) {
+    const idVeterinario = idDe(user);
+
+    try {
+      const filas = await this.dataSource.query(
+        `
+        SELECT
+        c.id_cita,
+        c.fecha,
+        c.hora,
+        c.tipo,
+        c.descripcion AS cita_descripcion,
+        c.id_mascota,
+        c.id_cliente,
+
+        m.nombre AS mascota_nombre,
+        m.tipo AS mascota_tipo,
+        m.raza AS mascota_raza,
+        m.edad AS mascota_edad,
+        m.peso AS mascota_peso,
+        m.alergias AS mascota_alergias,
+        m.genero AS mascota_genero,
+
+        cm.id_cons_medica,
+
+        t.id_tratamiento,
+        t.descripcion AS tratamiento_descripcion,
+        t.fecha_emision
+
+        FROM citas c
+
+        INNER JOIN LATERAL (
+            SELECT cm.id_cons_medica
+            FROM consultas cm
+            WHERE cm.id_cita = c.id_cita
+              AND cm.id_veterinario = $2
+            ORDER BY cm.id_cons_medica DESC
+            LIMIT 1
+        ) cm ON TRUE
+
+        LEFT JOIN mascotas m
+            ON m.id_mascota = c.id_mascota
+            AND m.id_cliente = c.id_cliente
+
+        LEFT JOIN tratamientos t
+            ON t.id_cons_medica = cm.id_cons_medica
+
+        WHERE c.id_cita = $1
+
+        ORDER BY t.id_tratamiento ASC;
+        `,
+        [id, idVeterinario],
+      );
+
+      if (!filas.length) {
+        throw new NotFoundException(
+          'Cita no encontrada o no asignada a este veterinario.',
+        );
+      }
+
+      return ocultarCosto(filas[0], 'VETERINARIO');
+
+    } catch (error) {
+      if (error instanceof NotFoundException) {
+        throw error;
+      }
+
+      this.logger.error(
+        'Error al consultar el detalle de la cita',
+        (error as Error)?.stack,
+      );
+
+      throw new BadRequestException(
+        'No se pudo consultar el detalle de la cita.',
+      );
+    }
+  }
+
 }
 
 /** El costo es un dato administrativo: lo ven ADMIN, RECEPCIONISTA y el CLIENTE dueño de la cita. */

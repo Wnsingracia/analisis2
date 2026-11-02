@@ -142,6 +142,7 @@ export class UsuariosService {
         id_usuario: String(nuevo_id),
         cel: dto.cel ? Number(dto.cel) : null,
         contrasenia: await bcrypt.hash(dto.contrasenia, BCRYPT_ROUNDS),
+        fecha_creacion: new Date(),
         tipo_usuario,
       });
 
