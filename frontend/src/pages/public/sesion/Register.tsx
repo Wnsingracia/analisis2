@@ -322,8 +322,10 @@ export default function Register() {
             <div className="px-6 py-5 max-h-[45vh] overflow-y-auto text-sm text-gray-700 space-y-5">
 
               <p className="text-gray-600">
-                Antes de completar tu registro, te solicitamos leer
-                las siguientes condiciones de uso de la aplicación VetCare.
+                Te damos la bienvenida a VetCare, la plataforma de gestión
+                y atención veterinaria de SPA PAWS & PALMS. Antes de crear
+                tu cuenta, lee las siguientes condiciones que regulan el
+                uso de nuestros servicios digitales y veterinarios.
               </p>
 
               <section>
@@ -331,92 +333,183 @@ export default function Register() {
                   1. Aceptación de los términos
                 </h3>
                 <p>
-                  Al registrarte en VetCare, aceptas las condiciones
-                  establecidas para el uso de la plataforma y sus
-                  funcionalidades. Si no estás de acuerdo, puedes
-                  cancelar el proceso de registro.
+                  Al registrarte y utilizar VetCare, aceptas las presentes
+                  condiciones de uso. Estas regulan el acceso a la plataforma,
+                  la administración de tu cuenta y el uso de las funcionalidades
+                  relacionadas con la atención de tus mascotas. Si no estás
+                  de acuerdo con alguna de estas condiciones, debes abstenerte
+                  de completar el registro.
                 </p>
               </section>
 
               <section>
                 <h3 className="font-bold text-primary text-base mb-2">
-                  2. Uso de la aplicación
+                  2. Registro y responsabilidad de la cuenta
                 </h3>
                 <p>
-                  VetCare proporciona herramientas para gestionar
-                  información de clientes, mascotas, citas y servicios
-                  veterinarios. El usuario se compromete a utilizar
-                  la plataforma de manera responsable y adecuada.
+                  El usuario debe proporcionar información personal verdadera,
+                  completa y actualizada, incluyendo nombres, apellidos,
+                  correo electrónico y número de contacto. Cada usuario es
+                  responsable de mantener la confidencialidad de sus
+                  credenciales y de las actividades realizadas desde su cuenta.
+                  En caso de detectar accesos sospechosos o no autorizados,
+                  deberá comunicarlo a la administración de la veterinaria.
                 </p>
               </section>
 
               <section>
                 <h3 className="font-bold text-primary text-base mb-2">
-                  3. Veracidad de la información
+                  3. Registro y responsabilidad sobre las mascotas
                 </h3>
                 <p>
-                  El usuario debe proporcionar información verdadera,
-                  actualizada y completa durante el registro y al
-                  utilizar los servicios de la aplicación.
+                  El propietario o responsable de la mascota debe registrar
+                  información correcta sobre su animal, incluyendo nombre,
+                  especie, raza, edad, peso, antecedentes, alergias y demás
+                  datos solicitados. También debe mantener esta información
+                  actualizada y comunicar oportunamente cualquier cambio
+                  relevante para su atención veterinaria.
                 </p>
               </section>
 
               <section>
                 <h3 className="font-bold text-primary text-base mb-2">
-                  4. Protección de datos personales
+                  4. Citas y servicios veterinarios
                 </h3>
                 <p>
-                  La información proporcionada será utilizada para
-                  gestionar la cuenta del usuario y permitir el
-                  funcionamiento de los servicios de VetCare.
-                  La aplicación deberá proteger estos datos y
-                  tratarlos conforme a su política de privacidad
-                  y la normativa aplicable.
+                  La plataforma permite gestionar solicitudes, consultar
+                  información y realizar el seguimiento de citas veterinarias.
+                  La disponibilidad y confirmación de una cita estarán sujetas
+                  a la agenda y validación del personal de la veterinaria.
+                  Las solicitudes de cancelación o reprogramación deberán
+                  comunicarse oportunamente por los canales habilitados.
+                  La atención de urgencias estará sujeta a la capacidad
+                  y disponibilidad del establecimiento.
                 </p>
               </section>
 
               <section>
                 <h3 className="font-bold text-primary text-base mb-2">
-                  5. Responsabilidad de la cuenta
+                  5. Consultas, tratamientos e historial clínico
                 </h3>
                 <p>
-                  El usuario es responsable de mantener la
-                  confidencialidad de sus credenciales de acceso
-                  y de notificar cualquier uso no autorizado
-                  de su cuenta.
+                  Los datos relacionados con consultas, diagnósticos,
+                  tratamientos, observaciones y antecedentes de las mascotas
+                  serán registrados por el personal veterinario autorizado.
+                  El propietario podrá consultar la información que esté
+                  habilitada para su cuenta. Los registros clínicos tienen
+                  como finalidad apoyar la continuidad y el seguimiento
+                  de la atención veterinaria.
                 </p>
               </section>
 
               <section>
                 <h3 className="font-bold text-primary text-base mb-2">
-                  6. Modificaciones del servicio
+                  6. Responsabilidad del propietario durante la atención
                 </h3>
                 <p>
-                  VetCare podrá actualizar sus funcionalidades,
-                  condiciones de uso y políticas. Los cambios
-                  relevantes deberán comunicarse a los usuarios.
+                  El propietario debe informar al personal veterinario sobre
+                  enfermedades conocidas, alergias, medicamentos, cambios
+                  de comportamiento y cualquier antecedente que pueda
+                  influir en la atención. Asimismo, es responsable de mantener
+                  a su mascota bajo control durante su permanencia en las
+                  instalaciones, siguiendo las indicaciones del personal.
                 </p>
               </section>
 
               <section>
                 <h3 className="font-bold text-primary text-base mb-2">
-                  7. Consultas y soporte
+                  7. Privacidad y tratamiento de datos personales
                 </h3>
                 <p>
-                  El usuario podrá solicitar asistencia mediante
-                  los canales de atención habilitados por VetCare.
+                  VetCare recopila y utiliza los datos personales proporcionados
+                  para administrar cuentas, gestionar citas, identificar
+                  propietarios, mantener historiales de atención y facilitar
+                  la comunicación con la veterinaria. La información de las
+                  mascotas también será utilizada para fines relacionados
+                  con su atención y seguimiento. El acceso a estos datos
+                  estará limitado según las funciones y autorizaciones
+                  correspondientes.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="font-bold text-primary text-base mb-2">
+                  8. Seguridad de la información
+                </h3>
+                <p>
+                  La plataforma incorpora mecanismos de protección para
+                  controlar el acceso a las cuentas y proteger la información
+                  almacenada. El usuario se compromete a no compartir sus
+                  credenciales, intentar acceder a cuentas ajenas, alterar
+                  registros o utilizar la plataforma para actividades no
+                  autorizadas. La veterinaria podrá adoptar medidas de
+                  seguridad ante actividades sospechosas.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="font-bold text-primary text-base mb-2">
+                  9. Uso adecuado de la plataforma
+                </h3>
+                <p>
+                  El usuario se compromete a utilizar VetCare exclusivamente
+                  para los fines previstos. No deberá proporcionar información
+                  falsa, realizar solicitudes fraudulentas, interferir con
+                  el funcionamiento del sistema ni intentar acceder a
+                  funcionalidades restringidas.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="font-bold text-primary text-base mb-2">
+                  10. Disponibilidad y modificaciones del servicio
+                </h3>
+                <p>
+                  VetCare podrá recibir actualizaciones, mantenimientos y
+                  mejoras técnicas que ocasionen interrupciones temporales.
+                  La veterinaria podrá modificar las funcionalidades o
+                  condiciones de uso cuando resulte necesario, comunicando
+                  los cambios relevantes por los medios disponibles.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="font-bold text-primary text-base mb-2">
+                  11. Atención y soporte
+                </h3>
+                <p>
+                  Para consultas sobre cuentas, citas, información de mascotas
+                  o funcionamiento de la plataforma, el usuario podrá acudir
+                  a los canales de atención habilitados por SPA PAWS & PALMS.
+                  La plataforma no sustituye la evaluación directa de un
+                  profesional veterinario.
+                </p>
+              </section>
+
+              <section>
+                <h3 className="font-bold text-primary text-base mb-2">
+                  12. Aceptación y vigencia
+                </h3>
+                <p>
+                  Al marcar la casilla de aceptación y completar el registro,
+                  el usuario declara haber leído y comprendido estas
+                  condiciones. Su aceptación será utilizada como constancia
+                  de conformidad con las reglas de utilización de VetCare.
                 </p>
               </section>
 
               <div className="bg-blue-50 border border-blue-100 rounded-xl p-4">
                 <p className="text-blue-800 text-xs">
-                  Al aceptar, confirmas que has leído y comprendido
-                  estas condiciones y que deseas continuar con
-                  el proceso de registro.
+                  La creación de una cuenta permite acceder a las
+                  funcionalidades digitales habilitadas para clientes.
+                  El registro no garantiza por sí mismo la disponibilidad
+                  inmediata de una cita ni la prestación de un procedimiento
+                  veterinario.
                 </p>
               </div>
 
             </div>
+
 
             {/* Checkbox obligatorio */}
             <div className="px-6 py-4 border-t border-gray-100 bg-gray-50">

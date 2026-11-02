@@ -5,11 +5,11 @@ import api from '../../services/api';
 
 interface Cita {
   id_cita: string;
+  id_cons_medica: string; // Identificador de la consulta médica
   fecha: string;
   hora: string;
   tipo: string;
   cita_descripcion?: string;
-  costo: number | string;
   id_mascota: string;
   mascota_nombre?: string;
   mascota_tipo?: string;
@@ -34,6 +34,10 @@ const DetalleCita: React.FC = () => {
   const [cita, setCita] = useState<Cita | null>(null);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
+  const [descripcionTratamiento, setDescripcionTratamiento] = useState('');
+  const [guardandoTratamiento, setGuardandoTratamiento] = useState(false);
+  const [errorTratamiento, setErrorTratamiento] = useState('');
+  const [exitoTratamiento, setExitoTratamiento] = useState('');
 
   useEffect(() => {
     const cargarDetalle = async () => {
@@ -60,6 +64,67 @@ const DetalleCita: React.FC = () => {
 
     if (id) cargarDetalle();
   }, [id]);
+  
+  const agregarTratamiento = async () => {
+    if (!cita?.id_cons_medica) {
+      setErrorTratamiento(
+        'No se encontró la consulta médica asociada a esta cita.'
+      );
+      return;
+    }
+
+    const descripcion = descripcionTratamiento.trim();
+
+    if (!descripcion) {
+      setErrorTratamiento('Ingresa la descripción del tratamiento.');
+      return;
+    }
+
+    if (guardandoTratamiento) return;
+
+    try {
+      setGuardandoTratamiento(true);
+      setErrorTratamiento('');
+      setExitoTratamiento('');
+
+      const respuesta = await api.post('/tratamientos', {
+        descripcion,
+        id_cons_medica: cita.id_cons_medica,
+      });
+
+      const nuevoTratamiento =
+        respuesta.data?.tratamiento ?? respuesta.data;
+
+      setCita((anterior) => {
+        if (!anterior) return anterior;
+
+        return {
+          ...anterior,
+          id_tratamiento: nuevoTratamiento.id_tratamiento,
+          tratamiento_descripcion: nuevoTratamiento.descripcion,
+          fecha_emision: nuevoTratamiento.fecha_emision,
+        };
+      });
+
+      setDescripcionTratamiento('');
+      setExitoTratamiento('Tratamiento registrado correctamente.');
+
+    } catch (err: any) {
+      console.error('Error al registrar tratamiento:', err);
+
+      const mensaje = err?.response?.data?.message;
+
+      setErrorTratamiento(
+        Array.isArray(mensaje)
+          ? mensaje.join(', ')
+          : mensaje || 'No se pudo registrar el tratamiento.'
+      );
+
+    } finally {
+      setGuardandoTratamiento(false);
+    }
+  };
+
 
   const formatoFecha = (fecha?: string) => {
     if (!fecha) return 'No especificada';
@@ -71,13 +136,6 @@ const DetalleCita: React.FC = () => {
       : fecha;
   };
 
-  const formatoCosto = (costo?: number | string) => {
-    const valor = Number(costo);
-
-    return Number.isFinite(valor)
-      ? `Bs. ${valor.toFixed(2)}`
-      : 'No especificado';
-  };
 
   const InfoItem = ({
     titulo,
@@ -206,11 +264,6 @@ const DetalleCita: React.FC = () => {
             icono="medical_services"
           />
 
-          <InfoItem
-            titulo="Costo"
-            valor={formatoCosto(cita.costo)}
-            icono="payments"
-          />
 
           <InfoItem
             titulo="Identificador"
@@ -326,6 +379,7 @@ const DetalleCita: React.FC = () => {
         </div>
       </section>
 
+
       {/* TRATAMIENTO */}
       <section className="bg-white rounded-3xl border border-outline-variant/30 shadow-sm p-6">
 
@@ -341,34 +395,119 @@ const DetalleCita: React.FC = () => {
 
         {cita.id_tratamiento ? (
           <div className="bg-surface-container-low rounded-2xl p-5">
+
+            <div className="flex items-center gap-2 mb-4">
+              <span className="material-symbols-outlined text-green-600">
+                check_circle
+              </span>
+
+              <p className="text-sm font-bold text-green-700">
+                Tratamiento registrado
+              </p>
+            </div>
+
             <p className="text-xs uppercase font-bold text-on-surface-variant">
               Descripción del tratamiento
             </p>
 
-            <p className="text-sm text-on-surface mt-2 leading-relaxed">
+            <p className="text-sm text-on-surface mt-2 leading-relaxed whitespace-pre-wrap">
               {cita.tratamiento_descripcion || 'Sin descripción disponible.'}
             </p>
 
             <p className="text-xs text-on-surface-variant mt-4">
               Fecha de emisión: {formatoFecha(cita.fecha_emision || '')}
             </p>
+
           </div>
         ) : (
-          <div className="bg-surface-container-low rounded-2xl p-6 text-center">
-            <span className="material-symbols-outlined text-4xl text-outline">
-              medical_information
-            </span>
+          <div className="bg-surface-container-low rounded-2xl p-5">
 
-            <p className="font-bold text-primary mt-2">
-              Sin tratamiento asociado
+            <div className="flex items-center gap-2 mb-3">
+              <span className="material-symbols-outlined text-primary">
+                add_circle
+              </span>
+
+              <p className="font-bold text-primary">
+                Registrar nuevo tratamiento
+              </p>
+            </div>
+
+            <p className="text-sm text-on-surface-variant mb-4">
+              Registra las indicaciones o el tratamiento clínico correspondiente
+              a esta consulta.
             </p>
 
-            <p className="text-sm text-on-surface-variant mt-1">
-              Esta cita todavía no tiene un tratamiento clínico registrado.
-            </p>
+            <label
+              htmlFor="descripcionTratamiento"
+              className="block text-xs font-bold text-on-surface-variant uppercase mb-2"
+            >
+              Descripción del tratamiento
+            </label>
+
+            <textarea
+              id="descripcionTratamiento"
+              value={descripcionTratamiento}
+              onChange={(e) => {
+                setDescripcionTratamiento(e.target.value);
+                setErrorTratamiento('');
+                setExitoTratamiento('');
+              }}
+              maxLength={1000}
+              rows={5}
+              placeholder="Describe el tratamiento, indicaciones y recomendaciones..."
+              disabled={guardandoTratamiento}
+              className="w-full resize-y rounded-xl border border-outline-variant/50 bg-white p-4 text-sm text-on-surface outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 disabled:opacity-60"
+            />
+
+            <div className="flex justify-end mt-2">
+              <p className="text-xs text-on-surface-variant">
+                {descripcionTratamiento.length}/1000 caracteres
+              </p>
+            </div>
+
+            {errorTratamiento && (
+              <div className="mt-4 p-3 rounded-xl bg-error-container/20 text-error flex items-start gap-2">
+                <span className="material-symbols-outlined text-lg">
+                  error
+                </span>
+                <p className="text-sm font-medium">{errorTratamiento}</p>
+              </div>
+            )}
+
+            {exitoTratamiento && (
+              <div className="mt-4 p-3 rounded-xl bg-green-50 text-green-700 flex items-start gap-2">
+                <span className="material-symbols-outlined text-lg">
+                  check_circle
+                </span>
+                <p className="text-sm font-medium">{exitoTratamiento}</p>
+              </div>
+            )}
+
+            <div className="flex justify-end mt-5">
+              <button
+                type="button"
+                onClick={agregarTratamiento}
+                disabled={guardandoTratamiento || !descripcionTratamiento.trim()}
+                className="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white rounded-xl font-bold text-sm shadow-sm hover:opacity-90 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <span className={`material-symbols-outlined text-xl ${
+                  guardandoTratamiento ? 'animate-spin' : ''
+                }`}>
+                  {guardandoTratamiento ? 'progress_activity' : 'save'}
+                </span>
+
+                {guardandoTratamiento
+                  ? 'Registrando tratamiento...'
+                  : 'Registrar tratamiento'}
+              </button>
+            </div>
+
           </div>
         )}
+
       </section>
+
+
 
     </div>
   );

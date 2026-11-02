@@ -1,0 +1,17 @@
+{
+  "nombre": "backup_2026-11-02T06-00-00-024Z",
+  "fecha": "2026-11-02T06:00:00.024Z",
+  "formato": "ZIP",
+  "archivo": "backup_2026-11-02T06-00-00-024Z.zip",
+  "contenido": [
+    "estructura.sql",
+    "datos.sql",
+    "restricciones.sql",
+    "indices.sql",
+    "secuencias.sql",
+    "funciones.sql",
+    "triggers.sql",
+    "politicas.sql"
+  ],
+  "esquema": "public"
+}

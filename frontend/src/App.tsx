@@ -43,7 +43,7 @@ import MisCitas from './pages/cliente/MisCitas';
 import { VeterinarioLayout} from './components/layout/veterinario/VeterinarioLayout';
 import MisCitasVeterinario from './pages/veterinario/MisCitas';
 import DetalleCita from './pages/veterinario/DetalleCita';
-
+import MisPacientes from './pages/veterinario/MisPacientes';
 // Dashboards por rol y otros
 import ClientDashboard from './pages/public/dashboard/ClientDashBoard';
 import VeterinarioDashboard from './pages/public/dashboard/VeterinarioDashBoard';
@@ -107,10 +107,10 @@ function App() {
         <Route path="/veterinario" element={<VeterinarioLayout />}>
           <Route index element={<Navigate to="dashboard" replace />} />
           <Route path="dashboard" element={<VeterinarioDashboard />} />
-          <Route path="patients" element={<div>Mis pacientes</div>} />
+          <Route path="pacientes" element={<MisPacientes/>} />
+          <Route path="clinical-history/:idMascota"element={<ClinicalHistory />}/>
           <Route path="citas" element={<MisCitasVeterinario />} />
           <Route path="citas/:id" element={<DetalleCita />} />
-          <Route path="perfil" element={<div>Mis datos</div>} />
         </Route>
 
         {/* REDIRECCIÓN DE LA RUTA ANTERIOR */}

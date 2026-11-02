@@ -18,3 +18,9 @@ coverage/
 npm-debug.log*
 yarn-debug.log*
 
+# Ignore local database backups
+backend/backups/
+
+# Ignore local SSL certificates
+certs/
+

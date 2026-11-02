@@ -58,23 +58,86 @@ export class TratamientosService {
 
   async crear(dto: CreateTratamientoDto, user: JwtPayload) {
     try {
-      const consulta = await this.consultasService.buscar(dto.id_cons_medica);
+      // 1. Buscar la consulta a la que se asociará el tratamiento
+      const consulta = await this.consultasService.buscar(
+        dto.id_cons_medica,
+      );
+
       if (!consulta) {
-        throw new BadRequestException('La consulta indicada no existe.');
+        throw new BadRequestException(
+          'La consulta médica indicada no existe.',
+        );
       }
-      if (rolDe(user) === 'VETERINARIO' && consulta.id_veterinario !== idDe(user)) {
+
+      // 2. Verificar que la consulta pertenezca al veterinario autenticado
+      if (
+        String(consulta.id_veterinario) !== String(idDe(user))
+      ) {
         throw new ForbiddenException(
           'Solo puedes registrar tratamientos en tus propias consultas.',
         );
       }
 
+      // 3. Generar fecha de emisión si no fue proporcionada
+      const ahora = new Date();
+
+      const fechaActual =
+        `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
+
+      const fecha_emision =
+        dto.fecha_emision?.trim() || fechaActual;
+
+      // 4. Registrar el tratamiento dentro de una transacción
       return await this.dataSource.transaction(async (manager) => {
-        const id_tratamiento = await siguienteId(manager, 'tratamientos', 'id_tratamiento');
-        await manager.insert(Tratamiento, { ...dto, id_tratamiento });
-        return manager.findOneByOrFail(Tratamiento, { id_tratamiento });
+        // Generar identificador
+        const id_tratamiento = await siguienteId(
+          manager,
+          'tratamientos',
+          'id_tratamiento',
+        );
+
+        // Preparar los datos
+        const tratamiento = manager.create(Tratamiento, {
+          id_tratamiento,
+          descripcion: dto.descripcion?.trim() || null,
+          fecha_emision,
+          id_cons_medica: dto.id_cons_medica,
+        });
+
+        // Insertar en PostgreSQL
+        await manager.save(Tratamiento, tratamiento);
+
+        // Recuperar el registro creado
+        const registrado = await manager.findOne(Tratamiento, {
+          where: { id_tratamiento },
+        });
+
+        if (!registrado) {
+          throw new BadRequestException(
+            'No se pudo recuperar el tratamiento registrado.',
+          );
+        }
+
+        return {
+          mensaje: 'Tratamiento registrado correctamente.',
+          tratamiento: registrado,
+        };
       });
     } catch (error) {
-      lanzarErrorDb(error, this.logger, 'crear', 'el tratamiento');
+      if (
+        error instanceof BadRequestException ||
+        error instanceof ForbiddenException ||
+        error instanceof NotFoundException
+      ) {
+        throw error;
+      }
+
+      lanzarErrorDb(
+        error,
+        this.logger,
+        'crear',
+        'el tratamiento',
+      );
     }
   }
 
