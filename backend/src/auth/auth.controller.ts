@@ -56,10 +56,10 @@ export class AuthController {
 
     res.cookie(COOKIE, accessToken, {
       httpOnly: true,                                 // JavaScript no puede leerla
-      secure: process.env.NODE_ENV === 'production',  // solo por HTTPS en producción
-      sameSite: 'strict',                             // frena CSRF
+      secure: true,  // solo por HTTPS en producción
+      sameSite: 'none',
+      path: '/',                             // frena CSRF
       maxAge: expiraEnMs,                             // igual que la expiración del JWT (8 h; 30 min en emergencia)
-      path: '/',
     });
 
     return { mensaje, usuario }; // el token ya no viaja en el cuerpo
