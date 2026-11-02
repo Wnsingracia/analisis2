@@ -1,8 +1,0 @@
-{
-  "exitoso": true,
-  "nombre": "backup_2026-11-01T22-50-57-041Z",
-  "fecha": "2026-11-01T22:50:57.041Z",
-  "ruta": "C:\\Users\\elluc\\Desktop\\analisis\\backend\\backups\\locales\\backup_2026-11-01T22-50-57-041Z",
-  "tamanoBytes": 157609,
-  "mensaje": "Respaldo SQL generado correctamente."
-}

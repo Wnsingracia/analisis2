@@ -131,44 +131,44 @@ export class RespaldosService {
     }
 
     async generarRespaldoDrive(): Promise<ResultadoRespaldo> {
+        // Primero genera y conserva el respaldo ZIP local
         const respaldoLocal = await this.generarRespaldo();
-        const rutaZip = `${respaldoLocal.ruta}.zip`;
-        const nombreZip = `${respaldoLocal.nombre}.zip`;
+
+        const rutaZip = respaldoLocal.ruta;
+        const nombreZip = path.basename(rutaZip);
 
         try {
-            this.logger.log(`Comprimiendo respaldo en: ${rutaZip}`);
-            await this.comprimirDirectorio(respaldoLocal.ruta, rutaZip);
-
             const drive = this.obtenerClienteDrive();
 
             const folderId = process.env.GOOGLE_DRIVE_FOLDER_ID;
 
             if (!folderId) {
-            throw new Error('No está configurado GOOGLE_DRIVE_FOLDER_ID');
+                throw new Error(
+                    'No está configurado GOOGLE_DRIVE_FOLDER_ID',
+                );
             }
 
-            // Comprobar que la carpeta existe y es accesible.
             await this.verificarCarpetaDrive(drive, folderId);
 
-            this.logger.log('Subiendo archivo a Google Drive...');
+            this.logger.log(
+                `Subiendo ${nombreZip} a Google Drive...`,
+            );
 
             const respuestaDrive = await drive.files.create({
-            requestBody: {
-                name: nombreZip,
-                parents: [folderId],
-            },
-            media: {
-                mimeType: 'application/zip',
-                body: createReadStream(rutaZip),
-            },
-            fields: 'id, name, webViewLink',
+                requestBody: {
+                    name: nombreZip,
+                    parents: [folderId],
+                },
+                media: {
+                    mimeType: 'application/zip',
+                    body: createReadStream(rutaZip),
+                },
+                fields: 'id, name, webViewLink',
             });
 
             this.logger.log(
-                `Respaldo subido con éxito a Drive. ID: ${respuestaDrive.data.id}`,
+                `Respaldo subido correctamente. ID: ${respuestaDrive.data.id}`,
             );
-
-            await fs.unlink(rutaZip).catch(() => null);
 
             await this.auditoria.registrar({
                 evento: 'RESPALDO_DRIVE_GENERADO',
@@ -176,30 +176,41 @@ export class RespaldosService {
                 resultado: 'OK',
                 detalle: {
                     nombre: nombreZip,
+                    rutaLocal: rutaZip,
                     driveFileId: respuestaDrive.data.id,
+                    webViewLink: respuestaDrive.data.webViewLink,
                     fecha: new Date().toISOString(),
                 },
             });
 
             return {
                 ...respaldoLocal,
-                mensaje: `Respaldo SQL generado y respaldado en Google Drive con éxito (${nombreZip}).`,
+                mensaje:
+                    `Respaldo generado correctamente. ` +
+                    `Archivo local: ${rutaZip}. ` +
+                    `También se subió a Google Drive.`,
             };
-        } catch (error) {
-            await fs.unlink(rutaZip).catch(() => null);
 
+        } catch (error) {
             await this.auditoria.registrar({
                 evento: 'RESPALDO_DRIVE_ERROR',
                 recurso: `respaldos/${nombreZip}`,
                 resultado: 'ERROR',
                 detalle: {
-                    mensaje: error instanceof Error ? error.message : String(error),
+                    rutaLocal: rutaZip,
+                    mensaje: error instanceof Error
+                        ? error.message
+                        : String(error),
                 },
             });
 
-            this.logger.error('Error al generar respaldo en Google Drive', error);
+            this.logger.error(
+                'Error al generar respaldo en Google Drive',
+                error,
+            );
+
             throw new InternalServerErrorException(
-                'El respaldo local se creó correctamente, pero ocurrió un problema al sincronizarlo con Google Drive.',
+                'El respaldo ZIP se creó correctamente en el servidor local, pero ocurrió un problema al sincronizarlo con Google Drive.',
             );
         }
     }
@@ -221,16 +232,14 @@ export class RespaldosService {
         const identificador = fecha.toISOString().replace(/[:.]/g, '-');
         const nombre = `backup_${identificador}`;
 
-        const directorio = path.resolve(
-            process.cwd(),
-            'backups',
-            'locales',
-            nombre,
-        );
+        const directorio = path.resolve(process.cwd(),'backups','locales',nombre,);
+
+        const rutaZip = `${directorio}.zip`;
+        const nombreZip = `${nombre}.zip`;
 
         await this.auditoria.registrar({
             evento: 'RESPALDO_INICIADO',
-            recurso: `respaldos/${nombre}`,
+            recurso: `respaldos/${nombreZip}`,
             resultado: 'OK',
             detalle: {
                 nombre,
@@ -239,8 +248,10 @@ export class RespaldosService {
         });
 
         try {
+            // Crear directorio de respaldo
             await fs.mkdir(directorio, { recursive: true });
 
+            // Exportar la base de datos
             const archivos = await this.dataSource.transaction(
                 'REPEATABLE READ',
                 async (manager) => {
@@ -249,6 +260,7 @@ export class RespaldosService {
                 },
             );
 
+            // Guardar archivos SQL
             for (const [archivo, contenido] of Object.entries(archivos)) {
                 await fs.writeFile(
                     path.join(directorio, archivo),
@@ -257,46 +269,69 @@ export class RespaldosService {
                 );
             }
 
-            const tamano = await this.calcularTamano(directorio);
-
-            const resultado: ResultadoRespaldo = {
-                exitoso: true,
+            // Crear manifiesto del respaldo
+            const manifest = {
                 nombre,
                 fecha: fecha.toISOString(),
-                ruta: directorio,
-                tamanoBytes: tamano,
-                mensaje: 'Respaldo SQL generado correctamente.',
+                formato: 'ZIP',
+                archivo: nombreZip,
+                contenido: Object.keys(archivos),
+                esquema: this.esquema,
             };
 
             await fs.writeFile(
                 path.join(directorio, 'manifest.json'),
-                JSON.stringify(resultado, null, 2),
+                JSON.stringify(manifest, null, 2),
                 'utf8',
             );
 
+            // Comprimir la carpeta y conservar el ZIP localmente
+            this.logger.log(`Comprimiendo respaldo: ${nombreZip}`);
+
+            await this.comprimirDirectorio(directorio, rutaZip);
+
+            // Obtener tamaño real del archivo comprimido
+            const informacionZip = await fs.stat(rutaZip);
+
+            const resultado: ResultadoRespaldo = {
+                exitoso: true,
+                nombre: nombreZip,
+                fecha: fecha.toISOString(),
+                ruta: rutaZip,
+                tamanoBytes: informacionZip.size,
+                mensaje: 'Respaldo SQL comprimido y guardado localmente correctamente.',
+            };
+
             await this.auditoria.registrar({
                 evento: 'RESPALDO_GENERADO',
-                recurso: `respaldos/${nombre}`,
+                recurso: `respaldos/${nombreZip}`,
                 resultado: 'OK',
                 detalle: {
-                    nombre,
-                    tamanoBytes: tamano,
+                    nombre: nombreZip,
+                    ruta: rutaZip,
+                    tamanoBytes: informacionZip.size,
                     cantidadArchivos: Object.keys(archivos).length + 1,
                     fecha: fecha.toISOString(),
                 },
             });
 
-            this.logger.log(`Respaldo generado: ${directorio}`);
+            this.logger.log(`Respaldo local generado: ${rutaZip}`);
 
             return resultado;
+
         } catch (error) {
+            // Eliminar ZIP incompleto si ocurrió algún error
+            await fs.unlink(rutaZip).catch(() => null);
+
             await this.auditoria.registrar({
                 evento: 'RESPALDO_ERROR',
-                recurso: `respaldos/${nombre}`,
+                recurso: `respaldos/${nombreZip}`,
                 resultado: 'ERROR',
                 detalle: {
                     nombre,
-                    mensaje: error instanceof Error ? error.message : 'Error desconocido',
+                    mensaje: error instanceof Error
+                        ? error.message
+                        : 'Error desconocido',
                 },
             });
 
@@ -306,7 +341,7 @@ export class RespaldosService {
             );
 
             throw new InternalServerErrorException(
-                'No se pudo generar el respaldo de la base de datos.',
+                'No se pudo generar el respaldo local de la base de datos.',
             );
         }
     }
