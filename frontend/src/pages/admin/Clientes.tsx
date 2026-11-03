@@ -910,25 +910,7 @@ const navigateToClinicalHistory = (pet: Mascota) => {
                               )}
                             </button>
 
-                            <button
-                              onClick={() => openEditClient(client)}
-                              className="w-9 h-9 rounded-lg flex items-center justify-center text-tertiary hover:bg-tertiary-container/30 transition-colors"
-                              title="Editar cliente"
-                            >
-                              <span className="material-symbols-outlined text-[20px]">
-                                edit
-                              </span>
-                            </button>
-
-                            <button
-                              onClick={() => openDeleteClient(client)}
-                              className="w-9 h-9 rounded-lg flex items-center justify-center text-error hover:bg-error-container/50 transition-colors"
-                              title="Dar de baja al cliente"
-                            >
-                              <span className="material-symbols-outlined text-[20px]">
-                                delete
-                              </span>
-                            </button>
+                    
                           </div>
                         </td>
                       </tr>
@@ -1186,15 +1168,6 @@ const navigateToClinicalHistory = (pet: Mascota) => {
                         </span>
                       </button>
 
-                      <button
-                        onClick={() => eliminarMascota(pet)}
-                        className="p-1.5 bg-error-container/30 text-error rounded-md hover:bg-error-container/50"
-                        title="Eliminar mascota"
-                      >
-                        <span className="material-symbols-outlined text-[18px]">
-                          delete
-                        </span>
-                      </button>
                     </div>
 
                     <div className="flex items-center gap-3 mb-4 pr-16">

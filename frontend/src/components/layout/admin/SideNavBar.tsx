@@ -79,13 +79,6 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({ onOpenGlobalAppointment 
             </Link>
           </li>
           
-          {/* NUEVO BOTÓN DE REPORTES (No funcional aún, solo visual) */}
-          <li className="mt-4 pt-4 border-t border-outline-variant/30">
-            <a href="#" className="text-on-surface-variant font-body text-sm font-semibold flex items-center px-4 py-3 mx-2 rounded-xl hover:bg-surface-variant/50 hover:translate-x-1 hover:text-tertiary transition-all duration-200">
-              <span className="material-symbols-outlined mr-3">analytics</span>
-              Reportes y Analíticas
-            </a>
-          </li>
         </ul>
       </div>
 

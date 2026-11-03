@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import api from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 
 // ================= TIPOS DEL BACKEND =================
 
@@ -97,10 +98,24 @@ const obtenerMesAnio = (fecha?: string | null) => {
 };
 
 export default function ClinicalHistory() {
-  const { idMascota } = useParams<{ idMascota: string }>();
   const [searchParams] = useSearchParams();
 
   const idCliente = searchParams.get('id_cliente');
+
+  const { usuario } = useAuth();
+
+  const esVeterinario =
+    String(usuario?.tipo_usuario || '').toUpperCase() === 'VETERINARIO';
+
+  const rutaVolver = esVeterinario
+    ? '/veterinario/pacientes'
+    : '/admin/clients';
+
+  const textoVolver = esVeterinario
+    ? 'Volver a Mis Pacientes'
+    : 'Volver a Clientes y Mascotas';
+
+  const { idMascota } = useParams<{ idMascota: string }>();
 
   // ================= ESTADOS =================
 
@@ -165,6 +180,7 @@ export default function ClinicalHistory() {
         );
 
         const usuario = clienteRelacionado || clienteEncontrado?.usuario;
+        
 
         if (usuario) {
           setDuenoNombre(
@@ -244,6 +260,8 @@ export default function ClinicalHistory() {
     cargarHistorial();
   }, [idMascota, idCliente]);
 
+  
+
   // ================= CARGA =================
 
   if (loading) {
@@ -275,10 +293,10 @@ export default function ClinicalHistory() {
         </p>
 
         <Link
-          to="/admin/clients"
+          to={rutaVolver}
           className="bg-primary text-white px-5 py-3 rounded-xl font-bold text-sm"
         >
-          Volver a Clientes
+          {textoVolver}
         </Link>
       </div>
     );
@@ -308,15 +326,15 @@ export default function ClinicalHistory() {
 
       <header className="pb-6 flex flex-col gap-4 flex-shrink-0 border-b border-outline-variant/30 mb-6">
 
-        <Link
-          to="/admin/clients"
-          className="inline-flex items-center gap-2 text-on-surface-variant hover:text-primary font-body text-sm font-bold w-fit transition-colors"
-        >
-          <span className="material-symbols-outlined text-[18px]">
-            arrow_back
-          </span>
-          Volver a Clientes y Mascotas
-        </Link>
+      <Link
+        to={rutaVolver}
+        className="inline-flex items-center gap-2 text-on-surface-variant hover:text-primary font-body text-sm font-bold w-fit transition-colors"
+      >
+        <span className="material-symbols-outlined text-[18px]">
+          arrow_back
+        </span>
+        {textoVolver}
+      </Link>
 
         <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
 
