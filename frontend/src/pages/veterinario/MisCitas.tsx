@@ -9,7 +9,6 @@ interface Cita {
   hora: string;
   tipo: string;
   cita_descripcion?: string;
-  costo: number | string;
   id_mascota: string;
   mascota_nombre?: string;
   id_cliente: string;
@@ -94,13 +93,6 @@ const MisCitasVeterinario: React.FC = () => {
       : fecha;
   };
 
-  const formatoCosto = (costo: number | string) => {
-    const valor = Number(costo);
-
-    return Number.isFinite(valor)
-      ? `Bs. ${valor.toFixed(2)}`
-      : 'No especificado';
-  };
 
   return (
     <div className="flex flex-col h-full relative">
@@ -279,16 +271,6 @@ const MisCitasVeterinario: React.FC = () => {
                     </p>
                   </div>
 
-                  {/* COSTO */}
-                  <div className="flex justify-between items-center border-t border-outline-variant/30 pt-4">
-                    <span className="text-sm text-on-surface-variant">
-                      Costo registrado
-                    </span>
-
-                    <span className="text-lg font-bold text-primary">
-                      {formatoCosto(cita.costo)}
-                    </span>
-                  </div>
 
                   {/* BOTÓN DETALLE */}
                   <button

@@ -210,11 +210,26 @@ export class CitasService {
           c.hora,
           c.tipo,
           c.descripcion AS cita_descripcion,
-          c.costo,
+
           c.id_mascota,
           m.nombre AS mascota_nombre,
+
           c.id_cliente,
+
+          CONCAT_WS(
+            ' ',
+            u.nombres,
+            u.ap_pat,
+            u.ap_mat
+          ) AS cliente_nombre,
+
+          u.cel AS cliente_telefono,
+          u.correo AS cliente_correo,
+
+          'AGENDA_V2' AS prueba_version,
+
           cm.id_cons_medica,
+
           t.id_tratamiento,
           t.descripcion AS tratamiento_descripcion,
           t.fecha_emision
@@ -235,6 +250,12 @@ export class CitasService {
           ON m.id_mascota = c.id_mascota
           AND m.id_cliente = c.id_cliente
 
+        LEFT JOIN clientes cl
+          ON cl.id_usuario = c.id_cliente
+
+        LEFT JOIN usuarios u
+          ON u.id_usuario = cl.id_usuario
+
         LEFT JOIN tratamientos t
           ON t.id_cons_medica = cm.id_cons_medica
 
@@ -242,9 +263,7 @@ export class CitasService {
         `,
         [idVeterinario],
       );
-
-      // El veterinario no necesita conocer los costos administrativos.
-      return ocultarCosto(filas, 'VETERINARIO');
+      return filas;
 
     } catch (error) {
       this.logger.error(
@@ -257,6 +276,7 @@ export class CitasService {
       );
     }
   }
+
     /**
    * VETERINARIO:
    * Consulta el detalle de una cita solamente si
@@ -269,45 +289,62 @@ export class CitasService {
       const filas = await this.dataSource.query(
         `
         SELECT
-        c.id_cita,
-        c.fecha,
-        c.hora,
-        c.tipo,
-        c.descripcion AS cita_descripcion,
-        c.id_mascota,
-        c.id_cliente,
+          c.id_cita,
+          c.fecha,
+          c.hora,
+          c.tipo,
+          c.descripcion AS cita_descripcion,
 
-        m.nombre AS mascota_nombre,
-        m.tipo AS mascota_tipo,
-        m.raza AS mascota_raza,
-        m.edad AS mascota_edad,
-        m.peso AS mascota_peso,
-        m.alergias AS mascota_alergias,
-        m.genero AS mascota_genero,
+          c.id_mascota,
+          c.id_cliente,
 
-        cm.id_cons_medica,
+          m.nombre AS mascota_nombre,
+          m.tipo AS mascota_tipo,
+          m.raza AS mascota_raza,
+          m.edad AS mascota_edad,
+          m.peso AS mascota_peso,
+          m.alergias AS mascota_alergias,
+          m.genero AS mascota_genero,
 
-        t.id_tratamiento,
-        t.descripcion AS tratamiento_descripcion,
-        t.fecha_emision
+          CONCAT_WS(
+            ' ',
+            u.nombres,
+            u.ap_pat,
+            u.ap_mat
+          ) AS cliente_nombre,
+
+          u.cel AS cliente_telefono,
+          u.correo AS cliente_correo,
+
+          cm.id_cons_medica,
+
+          t.id_tratamiento,
+          t.descripcion AS tratamiento_descripcion,
+          t.fecha_emision
 
         FROM citas c
 
         INNER JOIN LATERAL (
-            SELECT cm.id_cons_medica
-            FROM consultas cm
-            WHERE cm.id_cita = c.id_cita
-              AND cm.id_veterinario = $2
-            ORDER BY cm.id_cons_medica DESC
-            LIMIT 1
+          SELECT cm.id_cons_medica
+          FROM consultas cm
+          WHERE cm.id_cita = c.id_cita
+            AND cm.id_veterinario = $2
+          ORDER BY cm.id_cons_medica DESC
+          LIMIT 1
         ) cm ON TRUE
 
         LEFT JOIN mascotas m
-            ON m.id_mascota = c.id_mascota
-            AND m.id_cliente = c.id_cliente
+          ON m.id_mascota = c.id_mascota
+          AND m.id_cliente = c.id_cliente
+
+        LEFT JOIN clientes cl
+          ON cl.id_usuario = c.id_cliente
+
+        LEFT JOIN usuarios u
+          ON u.id_usuario = cl.id_usuario
 
         LEFT JOIN tratamientos t
-            ON t.id_cons_medica = cm.id_cons_medica
+          ON t.id_cons_medica = cm.id_cons_medica
 
         WHERE c.id_cita = $1
 
@@ -322,7 +359,7 @@ export class CitasService {
         );
       }
 
-      return ocultarCosto(filas[0], 'VETERINARIO');
+      return filas[0];
 
     } catch (error) {
       if (error instanceof NotFoundException) {

@@ -59,11 +59,11 @@ export const SideNavBarVeterinario: React.FC = () => {
           {/* MIS PACIENTES */}
           <li>
             <Link
-              to="/veterinario/patients"
-              className={linkClass('/veterinario/patients')}
+              to="/veterinario/pacientes"
+              className={linkClass('/veterinario/pacientes')}
             >
               <span className={`material-symbols-outlined mr-3 ${
-                isActive('/veterinario/patients') ? 'icon-fill' : ''
+                isActive('/veterinario/pacientes') ? 'icon-fill' : ''
               }`}>
                 pets
               </span>
@@ -85,41 +85,9 @@ export const SideNavBarVeterinario: React.FC = () => {
               Mis Citas
             </Link>
           </li>
-
-          {/* MIS DATOS */}
-          <li>
-            <Link
-              to="/veterinario/perfil"
-              className={linkClass('/veterinario/perfil')}
-            >
-              <span className={`material-symbols-outlined mr-3 ${
-                isActive('/veterinario/perfil') ? 'icon-fill' : ''
-              }`}>
-                account_circle
-              </span>
-              Mis Datos
-            </Link>
-          </li>
-
         </ul>
       </div>
 
-      {/* CERRAR SESIÓN */}
-      <div className="mt-auto pt-4 border-t border-outline-variant/50 px-4">
-        <ul className="space-y-1">
-          <li>
-            <Link
-              to="/login"
-              className="text-error font-body text-sm font-semibold flex items-center px-4 py-3 rounded-xl hover:bg-error-container/50 hover:translate-x-1 transition-all duration-200"
-            >
-              <span className="material-symbols-outlined mr-3">
-                logout
-              </span>
-              Cerrar Sesión
-            </Link>
-          </li>
-        </ul>
-      </div>
 
     </nav>
   );

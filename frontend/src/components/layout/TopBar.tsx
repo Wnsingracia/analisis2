@@ -1,16 +1,63 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../context/AuthContext';
-import logoVetCare2 from '../../../assets/logo-VetCare2.jpeg';
+import { useAuth } from '../../context/AuthContext';
+import logoVetCare2 from '../../assets/logo-VetCare2.jpeg';
 
-export const AdminTopBar: React.FC = () => {
-  const { usuario: admin, cerrarSesion } = useAuth();
+// Configuración de los diferentes roles
+const configuracionRoles: Record<
+  string,
+  { panel: string; cuenta: string; iniciales: string }
+> = {
+  ADMIN: {
+    panel: 'Panel de Administración',
+    cuenta: 'Cuenta administrativa',
+    iniciales: 'AD',
+  },
+  RECEPCIONISTA: {
+    panel: 'Panel de Recepción',
+    cuenta: 'Cuenta de recepción',
+    iniciales: 'RE',
+  },
+  VETERINARIO: {
+    panel: 'Panel Veterinario',
+    cuenta: 'Cuenta profesional veterinaria',
+    iniciales: 'VE',
+  },
+  ESTILISTA: {
+    panel: 'Panel de Estilismo',
+    cuenta: 'Cuenta profesional de estilismo',
+    iniciales: 'ES',
+  },
+  CLIENTE: {
+    panel: 'Mi espacio VetCare',
+    cuenta: 'Cuenta de cliente',
+    iniciales: 'CL',
+  },
+};
+
+export const TopBar: React.FC = () => {
+  const { usuario, cerrarSesion } = useAuth();
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [cerrandoSesion, setCerrandoSesion] = useState(false);
 
   const profileMenuRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+
+  // Identificar el rol del usuario
+  const rol = String(usuario?.tipo_usuario || '').toUpperCase();
+
+  const configuracion = configuracionRoles[rol] || {
+    panel: 'Panel VetCare',
+    cuenta: 'Cuenta de usuario',
+    iniciales: 'VC',
+  };
+
+  // Obtener iniciales
+  const iniciales = usuario
+    ? `${usuario.nombres?.charAt(0) || ''}${usuario.ap_pat?.charAt(0) || ''}`.toUpperCase()
+    : configuracion.iniciales;
 
   // Cerrar menú al hacer clic fuera
   useEffect(() => {
@@ -53,15 +100,10 @@ export const AdminTopBar: React.FC = () => {
     }
   };
 
-  // Obtener iniciales del administrador
-  const iniciales = admin
-    ? `${admin.nombres?.charAt(0) || ''}${admin.ap_pat?.charAt(0) || ''}`.toUpperCase()
-    : 'AD';
-
   return (
     <header className="h-20 bg-white border-b border-outline-variant/30 flex items-center justify-between px-4 sm:px-8 sticky top-0 z-30 shadow-sm flex-shrink-0">
 
-      {/* ================= IDENTIDAD VETCARE ================= */}
+      {/* IDENTIDAD VETCARE */}
       <div className="flex items-center gap-3 min-w-0">
 
         <div className="w-12 h-12 rounded-xl overflow-hidden border border-outline-variant/20 shadow-sm shrink-0">
@@ -81,17 +123,16 @@ export const AdminTopBar: React.FC = () => {
             <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
 
             <p className="font-body text-[10px] sm:text-xs font-bold text-on-surface-variant tracking-widest uppercase truncate">
-              Panel de Administración
+              {configuracion.panel}
             </p>
           </div>
         </div>
 
       </div>
 
-      {/* ================= PERFIL ADMINISTRADOR ================= */}
+      {/* PERFIL DEL USUARIO */}
       <div className="flex items-center gap-3 sm:gap-5 shrink-0">
 
-        {/* Separador */}
         <div className="hidden sm:block h-9 w-px bg-outline-variant/50"></div>
 
         <div className="relative" ref={profileMenuRef}>
@@ -107,19 +148,19 @@ export const AdminTopBar: React.FC = () => {
 
             {/* Avatar */}
             <div className="w-10 h-10 rounded-full bg-primary text-white flex items-center justify-center font-bold text-sm shadow-sm shrink-0">
-              {iniciales}
+              {iniciales || configuracion.iniciales}
             </div>
 
-            {/* Datos del administrador */}
+            {/* Información del usuario */}
             <div className="text-left hidden sm:block max-w-[180px]">
               <p className="font-body text-sm font-bold text-on-surface truncate">
-                {admin
-                  ? `${admin.nombres} ${admin.ap_pat}`
+                {usuario
+                  ? `${usuario.nombres} ${usuario.ap_pat}`
                   : 'Cargando...'}
               </p>
 
               <p className="font-body text-xs text-on-surface-variant">
-                {admin?.tipo_usuario || 'Personal'}
+                {usuario?.tipo_usuario || 'Usuario'}
               </p>
             </div>
 
@@ -127,7 +168,7 @@ export const AdminTopBar: React.FC = () => {
             <span
               className="material-symbols-outlined text-on-surface-variant transition-transform duration-200"
               style={{
-                transform: menuOpen ? 'rotate(180deg)' : 'rotate(0deg)'
+                transform: menuOpen ? 'rotate(180deg)' : 'rotate(0deg)',
               }}
             >
               expand_more
@@ -135,28 +176,28 @@ export const AdminTopBar: React.FC = () => {
 
           </button>
 
-          {/* ================= MENÚ DESPLEGABLE ================= */}
+          {/* MENÚ DESPLEGABLE */}
           {menuOpen && (
             <div className="absolute right-0 mt-3 w-64 bg-white border border-outline-variant/30 rounded-2xl shadow-xl overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-200">
 
-              {/* Cabecera del menú */}
+              {/* Cabecera */}
               <div className="px-5 py-4 bg-surface-container-low border-b border-outline-variant/20">
 
                 <div className="flex items-center gap-3">
 
                   <div className="w-11 h-11 rounded-full bg-primary text-white flex items-center justify-center font-bold">
-                    {iniciales}
+                    {iniciales || configuracion.iniciales}
                   </div>
 
                   <div className="min-w-0">
                     <p className="font-bold text-sm text-on-surface truncate">
-                      {admin
-                        ? `${admin.nombres} ${admin.ap_pat}`
-                        : 'Administrador'}
+                      {usuario
+                        ? `${usuario.nombres} ${usuario.ap_pat}`
+                        : 'Usuario'}
                     </p>
 
                     <p className="text-xs text-on-surface-variant">
-                      {admin?.tipo_usuario || 'Personal'}
+                      {usuario?.tipo_usuario || 'Usuario'}
                     </p>
                   </div>
 
@@ -164,16 +205,16 @@ export const AdminTopBar: React.FC = () => {
 
               </div>
 
-              {/* Información */}
+              {/* Información de la cuenta */}
               <div className="p-2">
 
                 <div className="px-3 py-3 flex items-center gap-3 text-on-surface-variant">
                   <span className="material-symbols-outlined text-xl">
-                    admin_panel_settings
+                    account_circle
                   </span>
 
                   <span className="text-sm font-medium">
-                    Cuenta administrativa
+                    {configuracion.cuenta}
                   </span>
                 </div>
 
@@ -199,7 +240,7 @@ export const AdminTopBar: React.FC = () => {
 
               </div>
 
-              {/* Pie del menú */}
+              {/* Pie */}
               <div className="px-5 py-3 bg-surface-container-low border-t border-outline-variant/20">
                 <p className="text-[10px] text-center text-on-surface-variant tracking-wider">
                   VETCARE © 2026

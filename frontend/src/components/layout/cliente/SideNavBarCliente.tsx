@@ -113,19 +113,6 @@ export const SideNavBarCliente: React.FC = () => {
         </ul>
       </div>
 
-      {/* CERRAR SESIÓN */}
-      <div className="mt-auto pt-4 border-t border-outline-variant/50 px-4">
-        <button
-          type="button"
-          onClick={handleCerrarSesion}
-          className="w-full text-error font-body text-sm font-semibold flex items-center px-4 py-3 rounded-xl hover:bg-error-container/50 hover:translate-x-1 transition-all duration-200"
-        >
-          <span className="material-symbols-outlined mr-3">
-            logout
-          </span>
-          Cerrar Sesión
-        </button>
-      </div>
 
     </nav>
   );

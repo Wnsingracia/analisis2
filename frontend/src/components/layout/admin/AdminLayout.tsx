@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { SideNavBar } from './SideNavBar';
-import { AdminTopBar } from './AdminTopBar';
+import { TopBar } from '../TopBar';
 import { Modal } from '../../ui/Modal';
 import { InputField } from '../../ui/InputField';
 import { Button } from '../../ui/Button';
@@ -32,7 +32,7 @@ export const AdminLayout: React.FC = () => {
       <SideNavBar onOpenGlobalAppointment={() => setIsGlobalModalOpen(true)} />
 
       <div className="flex-1 flex flex-col relative h-screen overflow-hidden">
-        <AdminTopBar />
+        <TopBar />
         <div className="flex-1 overflow-y-auto p-8 lg:p-10 bg-surface">
           <Outlet />
         </div>
