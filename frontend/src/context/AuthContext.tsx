@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import api from '../services/api';
 
 export interface Usuario {
-  id_usuario: string; nombres: string; ap_pat: string; tipo_usuario: string;
+  id_usuario: string; nombres: string; ap_pat: string;ap_mat: string; tipo_usuario: string;
 }
 interface AuthCtx {
   usuario: Usuario | null;
