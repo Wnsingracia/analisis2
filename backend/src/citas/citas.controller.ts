@@ -17,8 +17,10 @@ import type { JwtPayload } from '../guards/JwtAuthGuard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../guards/roles.decorator';
 import { UsuarioActual } from '../common/acceso';
+import { DispositivosModule } from '../dispositivos/dispositivos.module';
+import { DispositivoGuard } from '../dispositivos/dispositivo.guard';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, DispositivoGuard)
 @Controller('citas')
 export class CitasController {
   constructor(private readonly servicio: CitasService) {}

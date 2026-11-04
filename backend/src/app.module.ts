@@ -17,7 +17,7 @@ import { MascotasModule } from './mascotas/mascotas.module';
 import { RecepcionistasModule } from './recepcionistas/recepcionistas.module';
 import { TratamientosModule } from './tratamientos/tratamientos.module';
 import { AuthModule } from './auth/auth.module';
-
+import { DispositivosModule } from './dispositivos/dispositivos.module';
 import { AuditoriaModule } from './auditoria/auditoria.module';
 import { SegundoFactorModule } from './segundo-factor/segundo-factor.module';
 import { RespaldosModule } from './respaldos/respaldos.module';
@@ -70,6 +70,7 @@ import { SistemaModule } from './sistema/sistema.module';
     TratamientosModule,
     AuthModule,
     RespaldosModule,
+    DispositivosModule,
   ],
 })
 export class AppModule {}
