@@ -11,6 +11,8 @@ import { Usuario } from '../usuarios/entities/usuario.entity';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { contextoActual } from '../common/contexto';
 import { emergenciaVencida, expirarEmergencia } from '../common/emergencia';
+import { createHash } from 'crypto';
+
 
 export interface JwtPayload {
   id_usuario: string;
@@ -31,9 +33,14 @@ export class JwtAuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context
-      .switchToHttp()
-      .getRequest<Request & { user?: JwtPayload; cookies?: Record<string, string> }>();
-
+    .switchToHttp()
+    .getRequest<
+      Request & {
+        user?: JwtPayload;
+        cookies?: Record<string, string>;
+        deviceSessionHash?: string;
+      }
+    >();
     const [tipo, bearer] = request.headers.authorization?.split(' ') ?? [];
     const token = request.cookies?.vetcare_token ?? (tipo === 'Bearer' ? bearer : undefined);
 
@@ -106,7 +113,7 @@ export class JwtAuthGuard implements CanActivate {
     }
 
     request.user = { ...payload, tipo_usuario: actual.tipo_usuario, correo: actual.correo };
-
+    request.deviceSessionHash = createHash('sha256').update(token).digest('hex');
     // El contexto de la petición permite a la auditoría saber quién actúa
     const ctx = contextoActual();
     if (ctx) {
