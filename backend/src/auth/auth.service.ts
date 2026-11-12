@@ -10,10 +10,10 @@ import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
-import * as nodemailer from 'nodemailer';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { AuditoriaService } from '../auditoria/auditoria.service';
 import { TurnstileService } from './turnstile.service';
+import { MailerService } from '../mailer/mailer.service';
 import {
   BCRYPT_ROUNDS,
   HASH_FALSO,
@@ -37,7 +37,6 @@ const MENSAJE_LOGIN = 'Correo o contraseña incorrectos, o cuenta bloqueada temp
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  private readonly transporter: nodemailer.Transporter;
 
   constructor(
     @InjectRepository(Usuario)
@@ -45,17 +44,8 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly auditoria: AuditoriaService,
     private readonly turnstileService: TurnstileService,
-  ) {
-    this.transporter = nodemailer.createTransport({
-      host: 'smtp.resend.com',
-      port: 465,
-      secure: true,
-      auth: {
-        user: 'resend',
-        pass: process.env.API_KEY,
-      },
-    });
-  }
+    private readonly mailerService: MailerService,
+  ) {}
 
   // ---------- Utilidades ----------
 
@@ -284,41 +274,25 @@ export class AuthService {
       reset_token_expira: expira.toISOString(),
     });
 
-    // El correo se envía SIN esperar y los fallos solo se registran: así ni el tiempo
-    // de respuesta ni un error 500 delatan que el correo tiene cuenta (Parte 2-f).
-    void this.enviarCorreoRecuperacion(correo, token, usuario.id_usuario);
+    if (!process.env.FRONTEND_URL) {
+      this.logger.warn('FRONTEND_URL no está definida: el enlace del correo apuntará a localhost.');
+    }
+    const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
+    const enlace = `${frontendUrl}/reset-password?token=${token}`;
+
+    // El correo se envía SIN esperar: ni el tiempo de respuesta ni un error 500 deben delatar
+    // que el correo tiene cuenta (Parte 2-f). Si Resend falla, el motivo queda en el log y se
+    // invalida el token para no dejar un enlace que nadie recibió.
+    void this.mailerService
+      .enviarCorreoRestablecimiento(correo, enlace)
+      .catch(async (error) => {
+        this.logger.error(`Correo de recuperación no enviado: ${error?.message ?? error}`);
+        await this.usuarioRepo
+          .update(usuario.id_usuario, { reset_token: null, reset_token_expira: null })
+          .catch(() => undefined);
+      });
 
     return respuestaGenerica;
-  }
-
-  private async enviarCorreoRecuperacion(correo: string, token: string, idUsuario: string) {
-    const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:5173';
-    const enlaceRecuperacion = `${frontendUrl}/reset-password?token=${token}`;
-
-    try {
-      await this.transporter.sendMail({
-        from: 'VetCare <onboarding@resend.dev>',
-        to: correo,
-        subject: '🔄 Restablece tu contraseña de VetCare',
-        html: `
-          <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e4e4e7; border-radius: 16px;">
-            <h2 style="color: #0d9488; font-size: 22px; margin-bottom: 10px;">¡Hola desde VetCare! 🐾</h2>
-            <p style="color: #71717a; font-size: 14px; line-height: 1.5;">Hemos recibido una solicitud para restablecer la contraseña de tu cuenta.</p>
-            <p style="color: #71717a; font-size: 14px; line-height: 1.5;">Para continuar, haz clic en el siguiente botón seguro. Este enlace tiene una validez de <strong>${MINUTOS_VALIDEZ_TOKEN} minutos</strong>.</p>
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${enlaceRecuperacion}" style="background-color: #0d9488; color: white; text-decoration: none; padding: 12px 24px; font-weight: bold; border-radius: 8px; font-size: 14px; display: inline-block;">Restablecer Contraseña</a>
-            </div>
-            <hr style="border: 0; border-top: 1px solid #e4e4e7; margin: 20px 0;" />
-            <p style="color: #a1a1aa; font-size: 11px; text-align: center;">Si tú no solicitaste este cambio, puedes ignorar este correo de forma segura.</p>
-          </div>
-        `,
-      });
-    } catch (error) {
-      this.logger.error('Error enviando correo de recuperación', error as Error);
-      await this.usuarioRepo
-        .update(idUsuario, { reset_token: null, reset_token_expira: null })
-        .catch(() => undefined);
-    }
   }
 
   async restablecerContrasenia(token: string, nuevaContrasenia: string) {

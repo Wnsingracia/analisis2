@@ -14,10 +14,11 @@ import type { JwtPayload } from '../guards/JwtAuthGuard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../guards/roles.decorator';
 import { UsuarioActual, exigirPropioORoles } from '../common/acceso';
+import { DispositivoGuard } from '../dispositivos/dispositivo.guard';
 
 // No hay POST ni DELETE: un empleado se crea y se elimina junto con su rol
 // (POST /veterinarios, /estilistas, /recepcionistas y sus DELETE).
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, DispositivoGuard)
 @Controller('empleados')
 export class EmpleadosController {
   constructor(private readonly servicio: EmpleadosService) {}

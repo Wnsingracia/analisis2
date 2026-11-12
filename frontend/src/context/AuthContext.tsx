@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import api from '../services/api';
+import api, { limpiarAutorizacionDispositivo } from '../services/api';
 
 export interface Usuario {
   id_usuario: string; nombres: string; ap_pat: string;ap_mat: string; tipo_usuario: string;
@@ -25,8 +25,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const cerrarSesion = async () => {
-    try { await api.post('/auth/logout'); } finally { setUsuario(null); }
-  };
+  try { await api.post('/auth/logout'); }
+  finally { limpiarAutorizacionDispositivo(); setUsuario(null); }
+};
 
   return <Ctx.Provider value={{ usuario, cargando, setUsuario, cerrarSesion }}>{children}</Ctx.Provider>;
 }

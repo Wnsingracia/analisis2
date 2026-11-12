@@ -26,10 +26,11 @@ import type { JwtPayload } from '../guards/JwtAuthGuard';
 import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../guards/roles.decorator';
 import { Requiere2FA } from '../guards/requiere2fa.decorator';
+import { DispositivoGuard } from 'src/dispositivos/dispositivo.guard';
 
 type RequestConUsuario = Request & { user: JwtPayload };
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, DispositivoGuard)
 @Controller('usuarios')
 export class UsuariosController {
   constructor(private readonly usuarioServicio: UsuariosService) {}

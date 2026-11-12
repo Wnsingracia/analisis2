@@ -4,9 +4,10 @@ import { VeterinariosController } from './veterinarios.controller';
 import { VeterinariosService } from './veterinarios.service';
 import { Veterinario } from './entities/veterinarios.entity';
 import { EmpleadosModule } from '../empleados/empleados.module';
+import { DispositivosModule } from 'src/dispositivos/dispositivos.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Veterinario]), EmpleadosModule],
+  imports: [TypeOrmModule.forFeature([Veterinario]), EmpleadosModule, DispositivosModule],
   controllers: [VeterinariosController],
   providers: [VeterinariosService],
 })

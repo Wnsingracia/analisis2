@@ -26,11 +26,12 @@ export class DispositivoGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request = context
-      .switchToHttp()
-      .getRequest<RequestConDispositivo>();
+  const request = context.switchToHttp().getRequest<RequestConDispositivo>();
 
-    // Los métodos de consulta no requieren autorización del dispositivo.
+  if (request.user?.tipo_usuario?.toUpperCase() !== 'RECEPCIONISTA') {
+    return true;
+  }
+
     const metodosLectura = ['GET', 'HEAD', 'OPTIONS'];
 
     if (metodosLectura.includes(request.method.toUpperCase())) {

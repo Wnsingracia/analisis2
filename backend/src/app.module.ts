@@ -22,6 +22,7 @@ import { AuditoriaModule } from './auditoria/auditoria.module';
 import { SegundoFactorModule } from './segundo-factor/segundo-factor.module';
 import { RespaldosModule } from './respaldos/respaldos.module';
 import { SistemaModule } from './sistema/sistema.module';
+import { MailerModule } from './mailer/mailer.module';
 
 @Module({
   imports: [
@@ -71,6 +72,7 @@ import { SistemaModule } from './sistema/sistema.module';
     AuthModule,
     RespaldosModule,
     DispositivosModule,
+    MailerModule,
   ],
 })
 export class AppModule {}

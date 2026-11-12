@@ -5,11 +5,12 @@ import { AuthController } from './auth.controller';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { ClientesModule } from '../clientes/clientes.module';
 import { TurnstileService } from './turnstile.service';
+import { MailerModule } from '../mailer/mailer.module';
 
 
 // JwtModule ya es global (AppModule): aquí no se vuelve a registrar
 @Module({
-  imports: [TypeOrmModule.forFeature([Usuario]), ClientesModule],
+  imports: [TypeOrmModule.forFeature([Usuario]), ClientesModule, MailerModule],
   controllers: [AuthController],
   providers: [AuthService,TurnstileService],
   exports: [AuthService],

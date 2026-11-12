@@ -17,8 +17,9 @@ import { RolesGuard } from '../guards/roles.guard';
 import { Roles } from '../guards/roles.decorator';
 import { Requiere2FA } from '../guards/requiere2fa.decorator';
 import { UsuarioActual, exigirPropioORoles } from '../common/acceso';
+import { DispositivoGuard } from 'src/dispositivos/dispositivo.guard';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, DispositivoGuard)
 @Controller('recepcionistas')
 export class RecepcionistasController {
   constructor(private readonly servicio: RecepcionistasService) {}
