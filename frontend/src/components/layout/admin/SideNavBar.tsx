@@ -78,6 +78,12 @@ export const SideNavBar: React.FC<SideNavBarProps> = ({ onOpenGlobalAppointment 
               Respaldos
             </Link>
           </li>
+          <li>
+            <Link to="/admin/continuidad" className={`rounded-xl font-body text-sm font-semibold flex items-center px-4 py-3 mx-2 transition-all duration-200 ${isActive('/admin/respaldos')? 'bg-primary-container text-white shadow-sm': 'text-on-surface-variant hover:bg-surface-variant/50 hover:translate-x-1 hover:text-primary'}`}>
+              <span className={`material-symbols-outlined mr-3 ${isActive('/admin/respaldos') ? 'icon-fill' : ''}`}>database_backup</span>
+              Continuidad   
+            </Link>
+          </li>
           
         </ul>
       </div>

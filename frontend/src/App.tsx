@@ -49,6 +49,7 @@ import ClientDashboard from './pages/public/dashboard/ClientDashBoard';
 import VeterinarioDashboard from './pages/public/dashboard/VeterinarioDashBoard';
 import EstilistaDashboard from './pages/public/dashboard/EstilistaDashBoard';
 import RecepcionistaDashboard from './pages/public/dashboard/RecepcionistaDashBoard';
+import Continuidad from './pages/admin/Continuidad';
 
 
 function App() {
@@ -84,6 +85,7 @@ function App() {
           <Route path="appointments" element={<Appointments />} />
           <Route path="clinical-history/:idMascota"element={<ClinicalHistory />}/>
           <Route path="respaldos" element={<Respaldos />} />
+          <Route path="continuidad" element={<Continuidad />} />
         </Route>
 
         {/* ENTORNO DEL CLIENTE*/}
